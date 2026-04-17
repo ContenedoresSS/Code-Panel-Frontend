@@ -1,0 +1,94 @@
+
+import * as React from "react"
+import { useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod"
+import { Controller, useForm } from "react-hook-form"
+import { toast } from "sonner"
+import * as z from "zod"
+import { Field, FieldGroup, FieldLabel, FieldSet} from "./ui/field"
+import { Input } from "./ui/input"
+import { Button } from "./ui/button"
+import { loginUser} from "@/Service/AuthService";
+import { useNavigate } from "react-router";
+import { Loader2 } from "lucide-react";
+const formSchema = z.object({
+        email: z.email("Por favor, ingresa un correo válido."),
+        password: z
+        .string()
+        .min(8,"La contraseña debe tener almenos 8 caracteres"),
+    })
+export function LoginForm (){
+    const [isLoading, setIsLoading] = useState(false);
+
+    const form = useForm<z.infer<typeof formSchema>>({
+        resolver: zodResolver(formSchema),
+        defaultValues :{
+            email:"",
+            password: "",
+        },
+    })
+    async function onSubmit (values: z.infer<typeof formSchema>){
+        setIsLoading(true);
+
+        try{
+            const data = await loginUser(values);
+
+            toast.success("¡Registro exitoso!", {
+            description: 'Bienvenido a Code Panel.',
+        });
+        console.log("respuesta del servidor", data);
+        const navigate = useNavigate();
+
+        }catch (error: any) {
+
+        const errorMessage = error.response?.data?.message || "Hubo un error en el servidor";
+            
+            toast.error("Error al registrar", {
+            description: errorMessage,
+            });
+        } finally {
+            setIsLoading(false); 
+        }
+}
+return(
+    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-w-md mx-auto">
+        <FieldSet>
+            
+            <FieldGroup>
+                <Controller
+                name="email"
+                control={form.control}
+                render={({field})=>(   
+                    <Field>
+                        <FieldLabel htmlFor="email">Correo Electronico</FieldLabel>
+                        <Input id="email" type="email" autoComplete="off" placeholder="eduardo20contreras@gmail.com"  required/>
+                    </Field>
+                )}>
+                </Controller>      
+                <Controller
+                name="password"
+                control={form.control}
+                render={({field})=>(   
+                    <Field>
+                        <FieldLabel htmlFor="password">Contraseña</FieldLabel>
+                        <Input id="password" autoComplete="off" type="password" placeholder="*******"  required/>
+                    </Field>
+                    )}>
+                </Controller>
+
+            </FieldGroup>
+    </FieldSet>
+    <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? (
+            <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Procesando...
+            </>
+            ) : (
+            "Iniciar Sesión"
+            )}
+    </Button>
+    </form>
+)
+}
+export default LoginForm;
