@@ -8,13 +8,10 @@ import {
   SidebarMenuItem,
   SidebarMenu,
   SidebarGroupLabel,
-  SidebarGroupAction,
-  SidebarGroupContent,
-  SidebarMenuSubButton
+  SidebarGroupContent
 } from "@/components/ui/sidebar"
 
-import { BookOpen, LayoutDashboard , User2, Users , Code } from "lucide-react";
-import { NavLink } from "react-router";
+import { LayoutDashboard , User2, Code } from "lucide-react";
 
 
 export function SidebarMenuApp () {
