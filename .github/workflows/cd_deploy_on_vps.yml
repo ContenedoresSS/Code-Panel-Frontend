@@ -1,0 +1,28 @@
+name: CD - Deploy to VPS
+
+on:
+  workflow_run:
+    workflows: ["CI/CD Docker publish"]
+    types:
+      - completed
+
+jobs:
+  deploy-to-vps:
+    runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: Desplegar en VPS vía SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            cd /opt/code-panel-front
+            sudo /usr/bin/docker compose pull
+            sudo /usr/bin/docker compose up -d --remove-orphans
+            sudo /usr/bin/docker image prune -af
