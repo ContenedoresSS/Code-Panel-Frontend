@@ -8,7 +8,7 @@ import * as z from "zod"
 import { Field, FieldGroup, FieldLabel, FieldSet} from "./ui/field"
 import { Input } from "./ui/input"
 import { Button } from "./ui/button"
-import { registerUser } from "@/Service/AuthService";
+import { registerUser } from "@/service/AuthService";
 import { useNavigate } from "react-router";
 import { Loader2 } from "lucide-react";
 const formSchema = z.object({
@@ -24,19 +24,17 @@ const formSchema = z.object({
         .min(8,"La contraseña debe tener almenos 8 caracteres"),
         confirmPassword:z
         .string(),
-        clave: z
-        .string()
-        .min(1, "la clave es obligatoria"),
-        code: z
-        .string()
-        .min(1, "El codigo es obligatorio"),
+        identifier: z
+        .string(),
+        invitationCode: z
+        .string(),
     }).refine((data) => data.password === data.confirmPassword, {
     message: "Las contraseñas no coinciden",
     path: ["confirmPassword"], 
 })
 export function RegisterForm (){
     const [isLoading, setIsLoading] = useState(false);
-
+    const navigate = useNavigate();
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues :{
@@ -45,8 +43,8 @@ export function RegisterForm (){
             email:"",
             password: "",
             confirmPassword:"",
-            clave:"",
-            code: "",
+            identifier:"",
+            invitationCode: "",
         },
     })
     async function onSubmit (values: z.infer<typeof formSchema>){
@@ -59,11 +57,12 @@ export function RegisterForm (){
             description: 'Bienvenido a Code Panel.',
         });
         console.log("respuesta del servidor", data);
-        const navigate = useNavigate();
+        navigate("/login")
 
         }catch (error: any) {
 
         const errorMessage = error.response?.data?.message || "Hubo un error en el servidor";
+        console.log(error);
             
             toast.error("Error al registrar", {
             description: errorMessage,
@@ -83,7 +82,7 @@ return(
                 render={({field})=>(
                     <Field >
                         <FieldLabel htmlFor="name">Nombres</FieldLabel>
-                        <Input  id="name" autoComplete="off" placeholder="Tus nombres" required/>
+                        <Input {...field} value={field.value ?? ""} id="name" autoComplete="off" placeholder="Tus nombres" required/>
                     </Field>
                 )}>
                 </Controller>
@@ -93,7 +92,7 @@ return(
                 render={({field})=>(
                     <Field >
                         <FieldLabel htmlFor="lastName">Apellidos</FieldLabel>
-                        <Input  id="lastName" autoComplete="off" placeholder="Tus Apellidos" required/>
+                        <Input {...field} value={field.value ?? ""} id="lastName" autoComplete="off" placeholder="Tus Apellidos" required/>
                     </Field>
                 )}>
                 </Controller>
@@ -103,7 +102,12 @@ return(
                 render={({field})=>(   
                     <Field>
                         <FieldLabel htmlFor="email">Correo Electronico</FieldLabel>
-                        <Input id="email" type="email" autoComplete="off" placeholder="eduardo20contreras@gmail.com"  required/>
+                        <Input {...field} value={field.value ?? ""} id="email" type="email" autoComplete="off" placeholder="eduardo20contreras@gmail.com"  required/>
+                        {form.formState.errors.email && (
+                                <p className="text-red-500 text-xs mt-1">
+                                {form.formState.errors.email.message}
+                                </p>
+                            )}
                     </Field>
                 )}>
                 </Controller>
@@ -114,7 +118,12 @@ return(
                     render={({field})=>(   
                         <Field>
                             <FieldLabel htmlFor="password">Contraseña</FieldLabel>
-                            <Input id="password" autoComplete="off" type="password" placeholder="*******"  required/>
+                            <Input {...field} value={field.value ?? ""} id="password" autoComplete="off" type="password" placeholder="*******"  required/>
+                            {form.formState.errors.password && (
+                                <p className="text-red-500 text-xs mt-1">
+                                {form.formState.errors.password.message}
+                                </p>
+                            )}
                         </Field>
                         )}>
                     </Controller>
@@ -124,29 +133,34 @@ return(
                     render={({field})=>(
                         <Field>
                             <FieldLabel htmlFor="confirmPassword">Confirmar Contraseña</FieldLabel>
-                            <Input id="confirmPassword" autoComplete="off" type="password" placeholder="*******"  required/>
+                            <Input {...field} value={field.value ?? ""} id="confirmPassword" autoComplete="off" type="password" placeholder="*******"  required/>
+                            {form.formState.errors.confirmPassword && (
+                                <p className="text-red-500 text-xs mt-1">
+                                {form.formState.errors.confirmPassword.message}
+                                </p>
+                            )}
                         </Field>
                         )}>
                     </Controller>
                 </FieldGroup>  
                 <FieldGroup className="grid max-w-sm grid-cols-2">
                     <Controller
-                    name="clave"
+                    name="identifier"
                     control={form.control}
                     render={({field})=>(
                         <Field>
-                            <FieldLabel htmlFor="clave">Clave del trabajador</FieldLabel>
-                            <Input id="clave" autoComplete="off"  placeholder="12346" required/>
+                            <FieldLabel htmlFor="identifier">Clave del trabajador</FieldLabel>
+                            <Input {...field} value={field.value ?? ""} id="identifier" autoComplete="off"  placeholder="12346" />
                         </Field>
                     )}>
                     </Controller>
                     <Controller
-                    name="code"
+                    name="invitationCode"
                     control={form.control}
                     render={({field})=>(
                         <Field>
-                            <FieldLabel htmlFor="code">Código de Acceso</FieldLabel>
-                            <Input id="code" autoComplete="off" placeholder="AW34G" required/>
+                            <FieldLabel htmlFor="invitationCode">Código de Acceso</FieldLabel>
+                            <Input {...field} value={field.value ?? ""} id="invitationCode" autoComplete="off" placeholder="AW34G" />
                         </Field>
                         )}>
                     </Controller>

@@ -8,36 +8,39 @@ import * as z from "zod"
 import { Field, FieldGroup, FieldLabel, FieldSet} from "./ui/field"
 import { Input } from "./ui/input"
 import { Button } from "./ui/button"
-import { loginUser} from "@/Service/AuthService";
+import { loginUser} from "@/service/AuthService";
 import { useNavigate } from "react-router";
 import { Loader2 } from "lucide-react";
+import { TokenService } from "@/service/TokenService";
 const formSchema = z.object({
-        email: z.email("Por favor, ingresa un correo válido."),
+        identifier: z.email("Por favor, ingresa un correo válido."),
         password: z
         .string()
         .min(8,"La contraseña debe tener almenos 8 caracteres"),
     })
 export function LoginForm (){
     const [isLoading, setIsLoading] = useState(false);
-
+    const navigate = useNavigate();
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues :{
-            email:"",
+            identifier:"",
             password: "",
         },
     })
+
     async function onSubmit (values: z.infer<typeof formSchema>){
         setIsLoading(true);
 
         try{
             const data = await loginUser(values);
-
+            
+            TokenService.setTokens(data.token, data.refreshToken);
             toast.success("¡Registro exitoso!", {
             description: 'Bienvenido a Code Panel.',
         });
         console.log("respuesta del servidor", data);
-        const navigate = useNavigate();
+        navigate("/dashboard")
 
         }catch (error: any) {
 
@@ -56,12 +59,12 @@ return(
             
             <FieldGroup>
                 <Controller
-                name="email"
+                name="identifier"
                 control={form.control}
                 render={({field})=>(   
                     <Field>
                         <FieldLabel htmlFor="email">Correo Electronico</FieldLabel>
-                        <Input id="email" type="email" autoComplete="off" placeholder="eduardo20contreras@gmail.com"  required/>
+                        <Input {...field} id="email" type="email" autoComplete="off" placeholder="eduardo20contreras@gmail.com"  required/>
                     </Field>
                 )}>
                 </Controller>      
@@ -71,7 +74,7 @@ return(
                 render={({field})=>(   
                     <Field>
                         <FieldLabel htmlFor="password">Contraseña</FieldLabel>
-                        <Input id="password" autoComplete="off" type="password" placeholder="*******"  required/>
+                        <Input {...field} id="password" autoComplete="off" type="password" placeholder="*******"  required/>
                     </Field>
                     )}>
                 </Controller>

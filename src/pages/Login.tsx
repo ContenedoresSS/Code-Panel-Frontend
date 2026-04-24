@@ -46,7 +46,7 @@ export default function Login () {
             </div>
 
             <div className="px-6">
-            <p className="text-xl leading-relaxed text-[#0D1621] font-semibold opacity-85">
+            <p className="text-lg leading-relaxed text-[#0D1621] opacity-90">
                 Accede al panel administrativo para comenzar a gestionar el editor de código.
             </p>
             </div>
