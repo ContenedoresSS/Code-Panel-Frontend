@@ -26,7 +26,7 @@ const formSchema = z.object({
         identifier: z
         .string(),
         invitationCode: z
-        .string(),
+        .string().optional(),
     }).refine((data) => data.password === data.confirmPassword, {
     message: "Las contraseñas no coinciden",
     path: ["confirmPassword"], 
@@ -52,9 +52,7 @@ export function RegisterForm (){
         try{
             const data = await registerUser(values);
 
-            toast.success("¡Registro exitoso!", {
-            description: 'Bienvenido a Code Panel.',
-        });
+            toast.success("¡Registro exitoso!");
         console.log("respuesta del servidor", data);
         navigate("/login")
 
@@ -81,7 +79,7 @@ return(
                 render={({field})=>(
                     <Field >
                         <FieldLabel htmlFor="name">Nombres</FieldLabel>
-                        <Input {...field} value={field.value ?? ""} id="name" autoComplete="off" placeholder="Tus nombres" required/>
+                        <Input {...field}  id="name" autoComplete="off" placeholder="Tus nombres" required/>
                     </Field>
                 )}>
                 </Controller>
@@ -91,7 +89,7 @@ return(
                 render={({field})=>(
                     <Field >
                         <FieldLabel htmlFor="lastName">Apellidos</FieldLabel>
-                        <Input {...field} value={field.value ?? ""} id="lastName" autoComplete="off" placeholder="Tus Apellidos" required/>
+                        <Input {...field}  id="lastName" autoComplete="off" placeholder="Tus Apellidos" required/>
                     </Field>
                 )}>
                 </Controller>
@@ -101,7 +99,7 @@ return(
                 render={({field})=>(   
                     <Field>
                         <FieldLabel htmlFor="email">Correo Electronico</FieldLabel>
-                        <Input {...field} value={field.value ?? ""} id="email" type="email" autoComplete="off" placeholder="eduardo20contreras@gmail.com"  required/>
+                        <Input {...field}  id="email" type="email" autoComplete="off" placeholder="eduardo20contreras@gmail.com"  required/>
                         {form.formState.errors.email && (
                                 <p className="text-red-500 text-xs mt-1">
                                 {form.formState.errors.email.message}
@@ -117,7 +115,7 @@ return(
                     render={({field})=>(   
                         <Field>
                             <FieldLabel htmlFor="password">Contraseña</FieldLabel>
-                            <Input {...field} value={field.value ?? ""} id="password" autoComplete="off" type="password" placeholder="*******"  required/>
+                            <Input {...field}  id="password" autoComplete="off" type="password" placeholder="*******"  required/>
                             {form.formState.errors.password && (
                                 <p className="text-red-500 text-xs mt-1">
                                 {form.formState.errors.password.message}
@@ -132,7 +130,7 @@ return(
                     render={({field})=>(
                         <Field>
                             <FieldLabel htmlFor="confirmPassword">Confirmar Contraseña</FieldLabel>
-                            <Input {...field} value={field.value ?? ""} id="confirmPassword" autoComplete="off" type="password" placeholder="*******"  required/>
+                            <Input {...field}  id="confirmPassword" autoComplete="off" type="password" placeholder="*******"  required/>
                             {form.formState.errors.confirmPassword && (
                                 <p className="text-red-500 text-xs mt-1">
                                 {form.formState.errors.confirmPassword.message}
@@ -149,7 +147,7 @@ return(
                     render={({field})=>(
                         <Field>
                             <FieldLabel htmlFor="identifier">Clave del trabajador</FieldLabel>
-                            <Input {...field} value={field.value ?? ""} id="identifier" autoComplete="off"  placeholder="12346" />
+                            <Input {...field}  id="identifier" autoComplete="off"  placeholder="12346" required/>
                         </Field>
                     )}>
                     </Controller>
@@ -159,7 +157,7 @@ return(
                     render={({field})=>(
                         <Field>
                             <FieldLabel htmlFor="invitationCode">Código de Acceso</FieldLabel>
-                            <Input {...field} value={field.value ?? ""} id="invitationCode" autoComplete="off" placeholder="AW34G" />
+                            <Input {...field} id="invitationCode" autoComplete="off" placeholder="AW34G" />
                         </Field>
                         )}>
                     </Controller>

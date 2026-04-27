@@ -4,5 +4,5 @@ export interface RegisterDTO{
     email:string;
     password:string;
     identifier: string;
-    invitationCode: string;
+    invitationCode?: string;
 }

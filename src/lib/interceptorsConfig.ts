@@ -1,11 +1,17 @@
 import type { AxiosInstance } from "axios";
 import { TokenService } from "@/service/TokenService";
 import { refreshAccesToken } from "@/service/AuthService";
+import { toast } from "sonner"
 
 export const interceptorsConfig =(api: AxiosInstance) => {
 
 //token headers
 api.interceptors.request.use((config)=>{
+
+    if (config.url?.includes('/auth/login') || config.url?.includes('/auth/register')) {
+        return config;
+    }
+
     const token = TokenService.getAccesToken();
     if(token){
         config.headers.Authorization = `Bearer ${token}`;
@@ -38,6 +44,9 @@ api.interceptors.response.use(response => response,
                 console.error('Token refresh failed:', error);
                 TokenService.removeTokens();
                 window.location.href = "/";
+                toast.error("Error 401: Credenciales invalidas o Session Expirada",{
+                description: "Por favor verifica tus credenciales",
+                })
             }
         }
         return Promise.reject(error);
@@ -49,13 +58,22 @@ api.interceptors.response.use(response => response,
     error =>{
         const status = error.response ? error.response.status : null;
 
-        if(status === 401){
-
-        }else if(status === 404){
-
+        if(status === 404){
+            toast. error("Error 404: Recurso no Encontrado",{
+                description: status,
+            })
         }else if (status===500){
-
+            toast. error("Error 500: Error del servidor",{
+                description:status,
+            })
+        }else if (status===403){
+            window.location.href = "/dashboard";
+            toast. error("Error 403: Acceso denegado",{
+                description:status,
+            })
+            
         }
+        return Promise.reject(error);
     }
 )
 

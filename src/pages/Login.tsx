@@ -3,11 +3,19 @@ import {LoginForm} from "@/components/LoginForm"
 import { Code } from 'lucide-react';
 
 
+
 export default function Login () {
 
     return(
     <div className="min-h-screen grid grid-cols-1 md:grid-cols-2 font-sans">
-        <div className="flex flex-col items-center justify-center bg-white p-8 md:p-16 lg:p-24">
+        <div className="flex flex-col items-center bg-white p-6 md:p-10 lg:p-12 min-h-screen">
+            <div className="w-full flex justify-start">
+                <img 
+                    src="/luady.svg" 
+                    alt="Logo Luady"
+                    className="w-20 h-auto md:w-17 lg:w-20 transition-all duration-300 mb-8" 
+                />
+            </div>
             <div className="w-full max-w-md">
             
                 <div className="mb-10 text-left">
@@ -20,7 +28,7 @@ export default function Login () {
             </div>
 
             <div className="w-full">
-            <LoginForm />
+                <LoginForm />
             </div>
             <div className="mt-10 text-center text-sm text-gray-600">
                 ¿No tienes cuenta?{" "}
@@ -31,6 +39,7 @@ export default function Login () {
                     Regístrate
                 </NavLink>
             </div>
+            
         </div>
     </div>
 
