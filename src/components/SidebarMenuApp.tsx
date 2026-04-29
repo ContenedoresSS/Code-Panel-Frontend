@@ -11,7 +11,8 @@ import {
   SidebarGroupContent
 } from "@/components/ui/sidebar"
 
-import { LayoutDashboard , User2, Code } from "lucide-react";
+import { LayoutDashboard , User2, Code, Settings, Layers } from "lucide-react";
+import { Link } from "react-router";
 
 
 export function SidebarMenuApp () {
@@ -44,17 +45,47 @@ return(
           <SidebarGroupLabel>MAIN</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              <SidebarMenuButton>
-                <SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link to={"/dashboard"}>
                   <LayoutDashboard />
-                </SidebarMenuItem>
-                Dashboard
-              </SidebarMenuButton>
+                  <span>Dashboard</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link to={"/course"}>
+                  <Layers />
+                  <span>Curso</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link to={"/student"}>
+                  <User2 />
+                  <span>Alumnos</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
         <SidebarGroup>
           <SidebarGroupLabel>SYSTEM</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link to={"/setting"}>
+                  <Settings />
+                  <span>Configuración</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
@@ -65,7 +96,6 @@ return(
           </SidebarMenuButton>
         </SidebarMenuItem>
       </SidebarMenu>
-
       </SidebarFooter>
     </Sidebar>
 )
