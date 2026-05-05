@@ -6,64 +6,64 @@ import { Code } from 'lucide-react';
 
 export default function Login () {
 
-    return(
+return(
 <div className="min-h-screen grid grid-cols-1 md:grid-cols-2 font-sans">
-        
-        <div className="flex flex-col items-center bg-background p-6 md:p-10 lg:p-12 min-h-screen">
-            <div className="w-full flex justify-start">
-                <img 
-                    src="/luady.svg" 
-                    alt="Logo Uady"
-                    className="w-20 h-auto md:w-17 lg:w-20 transition-all duration-300 mb-8" 
-                />
-            </div>
-            <div className="w-full max-w-md">
-            
-                <div className="mb-10 text-left">
-                <h1 className="text-4xl font-extrabold text-foreground mb-2 tracking-tight">
-                    Inicio de Sesión
-                </h1>
-                <p className="text-base text-muted-foreground font-medium">
-                    Introduce tus credenciales para acceder
-                </p>
-            </div>
+      
+      <div className="flex flex-col items-center bg-background p-6 md:p-10 lg:p-12 min-h-screen">
+          <div className="w-full flex justify-start">
+              <img 
+                  src="/luady.svg" 
+                  alt="Logo Uady"
+                  className="w-20 h-auto md:w-17 lg:w-20 transition-all duration-300 mb-8" 
+              />
+          </div>
+          <div className="w-full max-w-md">
+          
+              <div className="mb-10 text-left">
+              <h1 className="text-4xl font-extrabold text-foreground mb-2 tracking-tight">
+                  Inicio de Sesión
+              </h1>
+              <p className="text-base text-muted-foreground font-medium">
+                  Introduce tus credenciales para acceder
+              </p>
+          </div>
 
-            <div className="w-full">
-                <LoginForm />
-            </div>
-            <div className="mt-10 text-center text-sm text-muted-foreground">
-                ¿No tienes cuenta?{" "}
-                <NavLink 
-                    to="/register" 
-                    className="font-bold text-primary hover:underline transition-all"
-                >
-                    Regístrate
-                </NavLink>
-            </div>
-            
-        </div>
-    </div>
+          <div className="w-full">
+              <LoginForm />
+          </div>
+          <div className="mt-10 text-center text-sm text-muted-foreground">
+              ¿No tienes cuenta?{" "}
+              <NavLink 
+                  to="/register" 
+                  className="font-bold text-primary hover:underline transition-all"
+              >
+                  Regístrate
+              </NavLink>
+          </div>
+          
+      </div>
+  </div>
 
-        <div className="hidden md:flex flex-col items-center justify-center bg-secondary p-12 lg:p-24 text-center">
-        <div className="max-w-sm">
-            <div className="flex items-center justify-center gap-4 mb-8">
-                {/* El ícono toma el color primario (azul oscuro) y texto blanco */}
-                <div className="bg-primary text-primary-foreground p-3.5 rounded-2xl shadow-xl">
-                    <Code/>
-                </div>
-                <span className="text-5xl font-bold text-foreground tracking-tighter">
-                    CodePanel
-                </span>
-            </div>
+      <div className="hidden md:flex flex-col items-center justify-center bg-secondary p-12 lg:p-24 text-center">
+      <div className="max-w-sm">
+          <div className="flex items-center justify-center gap-4 mb-8">
+              {/* El ícono toma el color primario (azul oscuro) y texto blanco */}
+              <div className="bg-primary text-primary-foreground p-3.5 rounded-2xl shadow-xl">
+                  <Code/>
+              </div>
+              <span className="text-5xl font-bold text-foreground tracking-tighter">
+                  CodePanel
+              </span>
+          </div>
 
-            <div className="px-6">
-            <p className="text-lg leading-relaxed text-foreground opacity-90">
-                Accede al panel administrativo para comenzar a gestionar el editor de código.
-            </p>
-            </div>
-        </div>
-        </div>
-    </div>
-    );
+          <div className="px-6">
+          <p className="text-lg leading-relaxed text-foreground opacity-90">
+              Accede al panel administrativo para comenzar a gestionar el editor de código.
+          </p>
+          </div>
+      </div>
+      </div>
+  </div>
+  );
 }
 

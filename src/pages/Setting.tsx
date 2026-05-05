@@ -1,5 +1,5 @@
 export default function Settings(){
-    return(
-        <h1>Estoy en settings</h1>
-    );
+  return(
+      <h1>Estoy en settings</h1>
+  );
 }
