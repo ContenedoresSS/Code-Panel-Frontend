@@ -1,6 +1,5 @@
 import EditorComponent from '@/components/EditorComponent';
-import { Button } from '@/components/ui/button';
-import type { EditorCodeFile, EditorLanguage } from '@/types/EditorProps';
+import type { EditorLanguage } from '@/types/EditorProps';
 import { useEffect } from 'react';
 
 export default function Course(){
