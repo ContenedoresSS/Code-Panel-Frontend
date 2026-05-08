@@ -1,4 +1,4 @@
-export interface LoginDTO{
-    identifier:string;
-    password:string;
+export interface LoginDTO {
+  identifier: string;
+  password: string;
 }
