@@ -1,22 +1,16 @@
 import EditorComponent from '@/components/EditorComponent';
 import { Button } from '@/components/ui/button';
-import type { EditorCodeFile, EditorLenguage } from '@/types/EditorProps';
+import type { EditorCodeFile, EditorLanguage } from '@/types/EditorProps';
 import { useEffect } from 'react';
 
 export default function Course(){
 
-  const SUPPORTED_LANGUAGES: EditorLenguage[] = [
-  { id: 'java', name: 'Java' },
-  { id: 'python', name: 'Python 3' },
-  { id: 'javascript', name: 'JavaScript (Node.js)' },
+  const SUPPORTED_LANGUAGES: EditorLanguage[] = [
+  { id: 1, monacoId:'cpp', name: 'C++ (gcc 13.2)' },
+    { id: 2, monacoId:'python', name: 'Python (3.11)' },
+    { id: 3, monacoId:'javascript', name: 'Node.js (20)'}
   ];
 
-  const INITIAL_FILE: EditorCodeFile = {
-  id: 'file-001',
-  nameFile: 'Problem1.js',
-  lenguageId: 'javascript',
-  code: '// Escribe tu código aquí...\nfunction solution(input) {\n    // Procesa los datos\n    return input;\n}'
-  };
 
   useEffect(() => {
 
@@ -39,8 +33,7 @@ export default function Course(){
 
 
       <EditorComponent 
-          lenguages={SUPPORTED_LANGUAGES}
-          initialCode={INITIAL_FILE}
+          languages={SUPPORTED_LANGUAGES}
       />
   
 

@@ -1,29 +1,61 @@
-import type { EditorCodeFile, EditorLenguage } from '@/types/EditorProps';
+import type { EditorCodeFile, EditorLanguage } from '@/types/EditorProps';
 import Editor from '@monaco-editor/react';
 import { useEffect, useState } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Download,  Upload, ALargeSmall, Sun, Moon, Circle, CheckCircle, Play} from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
+import { executionCode } from '@/service/EditorService';
+import { Button } from './ui/button';
 
 interface EditorPropsInfo{
-  lenguages: EditorLenguage[];
-  initialCode: EditorCodeFile;
+  languages: EditorLanguage[];
+  initialCode?: EditorCodeFile;
 }
 
-export default function EditorComponent({lenguages, initialCode,}: EditorPropsInfo){
+export default function EditorComponent({languages, initialCode,}: EditorPropsInfo){
 
-  const [lenguage, setLenguage] = useState<string>(initialCode?.lenguageId);
-  const [code, setCode] = useState<string>(initialCode?.code);
+  const [language, setLanguage] = useState<number>(initialCode?.languageId ?? languages[0]?.id ?? 1);
+  const [code, setCode] = useState<string>(initialCode?.code || "");
 	const [darkMode, setDarkMode] = useState(false);
 	const [fontSizes,setFontSize] = useState<number>(14);
+  const [output, setOutput] = useState<string>("Esperando ejecución...");
+  const [isExecuting, setIsExecuting] = useState(false);
+  const currentLanguage = languages.find(l => l.id === language)?.monacoId || "plaintext";
 
   useEffect(() => {
+    if (initialCode) {
+      setLanguage(initialCode.languageId);
       setCode(initialCode?.code);
-      setLenguage(initialCode?.lenguageId);
+    }
   },[initialCode])
 
-  const handleLenguageSelector = (value: string) =>{
-      setLenguage(value);
+  const handleRunCode = async () => {
+    console.log("Código a enviar:", code);
+    if (!code.trim()){
+      setOutput(" El editor está vacío. Escribe algo de código antes de ejecutar.");
+      return;
+    }
+    setIsExecuting(true);
+    setOutput("Compilando y ejecutando...");
+    try {
+      const payload = {
+        languageId: language,
+        code: code
+      };
+    const result = await executionCode(payload);
+    setOutput(result.output);
+    }catch(error){
+      console.error("Error ejecutando el código:", error);
+      setOutput("Error de comunicación con el servidor.");
+    } finally {
+      setIsExecuting(false);
+    }
+
+  }
+
+  const handleLanguageSelector = (value: string) =>{
+      setLanguage(Number(value));
+      setCode("");
   }
 	const toggleTheme = () => {
     setDarkMode(!darkMode);
@@ -37,7 +69,7 @@ export default function EditorComponent({lenguages, initialCode,}: EditorPropsIn
   <div className="flex justify-between items-center p-2 bg-muted/50 border-b border-border">
 	<div className='flex border rounded-md bg-background min-h-[35px] md:min-h-[40px] transition-all'>
 		<span className="font-mono text-sm font-semibold px-2 text-foreground p-2 ">
-      {initialCode.nameFile}
+      {initialCode?.nameFile ?? "Nuevo Archivo"}
     </span>
 	</div>
     <div className='flex justify-between items-center '>
@@ -78,13 +110,13 @@ export default function EditorComponent({lenguages, initialCode,}: EditorPropsIn
     </div>
     
     
-    <Select value={lenguage} onValueChange={handleLenguageSelector}>
+    <Select value={language.toString()} onValueChange={handleLanguageSelector}>
       <SelectTrigger className="w-[160px] h-8 text-xs bg-background">
       <SelectValue placeholder="Lenguaje" />
       </SelectTrigger>
       <SelectContent>
-      {lenguages.map((lang) => (
-        <SelectItem key={lang.id} value={lang.id} className="text-xs">
+      {languages.map((lang) => (
+        <SelectItem key={lang.id} value={lang.id.toString()} className="text-xs">
         {lang.name}
         </SelectItem>
       ))}
@@ -103,8 +135,9 @@ export default function EditorComponent({lenguages, initialCode,}: EditorPropsIn
         <Editor
           height="100%"
           width="100%"
-          language={lenguage}
+          language={currentLanguage}
           value={code}
+          onChange={(val) => setCode(val || "")}
           theme={darkMode ? "vs-dark" : "vs-light"}
           options={{
             minimap: { enabled: false },
@@ -121,13 +154,22 @@ export default function EditorComponent({lenguages, initialCode,}: EditorPropsIn
         {/* Cabecera Output */}
         <div className="flex justify-between items-center p-2 border-b border-border">
           <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Output</span>
-          <button className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium border border-border rounded-md hover:bg-muted transition-colors">
-            <Play className="w-3.5 h-3.5 fill-current" /> Run
-          </button>
+          <Button 
+            onClick={handleRunCode}
+            disabled={isExecuting}
+            className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium border border-border rounded-md transition-colors ${
+              isExecuting 
+                ? 'bg-muted opacity-50 cursor-not-allowed' 
+                : 'hover:bg-muted'
+            }`}
+          >
+            <Play className={`w-3.5 h-3.5 ${isExecuting ? 'animate-pulse' : 'fill-current'}`} /> 
+            {isExecuting ? 'Running...' : 'Run'}
+          </Button>
         </div>
         {/* Contenido Output */}
-        <div className="p-4 flex-1 overflow-y-auto font-mono text-sm text-muted-foreground bg-muted/10">
-          Esperando ejecución...
+        <div className="p-4 flex-1 overflow-y-auto font-mono text-sm text-muted-foreground bg-muted/10 whitespace-pre-wrap">
+          {output}
         </div>
       </div>
     </div>
