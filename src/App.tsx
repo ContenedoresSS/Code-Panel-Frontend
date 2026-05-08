@@ -19,7 +19,7 @@ function App() {
         </Route>
         <Route path="/dashboard" element={<Dashboard />} />
       </Routes>
-      <Toaster />
+      <Toaster richColors />
     </>
   )
 }

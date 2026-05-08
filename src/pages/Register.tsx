@@ -21,7 +21,15 @@ export default function Register () {
         </div>
     </div>
     
-    <div className="flex flex-col items-center justify-center bg-white p-8 lg:p-20">
+    <div className="flex flex-col items-center bg-white p-6 md:p-10 lg:p-12 min-h-screen">
+        <div className="w-full flex justify-end">
+            <img 
+                src="/luady.svg" 
+                alt="Logo Luady"
+                
+                className="w-20 h-auto md:w-17 lg:w-20 transition-all duration-300 mb-2" 
+            />
+        </div>
         <div className="w-full max-w-lg">
             <div className="mb-10 text-center">
                 <h1 className="text-4xl font-extrabold text-[#0D1621] mb-2">Registro</h1>
