@@ -50,10 +50,10 @@ export function RegisterForm (){
       setIsLoading(true);
 
       try{
-          const data = await registerUser(values);
+        await registerUser(values);
 
           toast.success("¡Registro exitoso!");
-      console.log("respuesta del servidor", data);
+      
       navigate("/login")
 
       }catch (error: any) {

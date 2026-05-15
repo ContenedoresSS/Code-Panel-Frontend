@@ -1,6 +1,6 @@
 export interface EditorLanguage {
   id: number;
-  monacoId:string;
+  monacoId: string;
   name: string;
 }
 

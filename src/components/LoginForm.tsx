@@ -38,7 +38,6 @@ export function LoginForm (){
             toast.success("¡Login exitoso!", {
             description: 'Bienvenido a Code Panel.',
         });
-        console.log("respuesta del servidor", data);
         navigate("/dashboard")
 
         }catch (error: any) {
