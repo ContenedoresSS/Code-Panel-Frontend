@@ -79,9 +79,7 @@ export default function LanguageTable({ languages, isLoading, onEdit, onDelete }
                     <TableCell>
                       <div className="flex flex-col gap-1">
                         <span className="text-sm text-foreground">{lang.dockerImage}</span>
-                        <code className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-md w-fit border border-border">
-                          {lang.executionCommand}
-                        </code>
+                        
                       </div>
                     </TableCell>
 

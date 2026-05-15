@@ -137,7 +137,7 @@ return(
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">
-                  {user?.identifier || 'Usuario'}
+                  {user?.name|| 'Usuario'}
                 </span>
                 <span className="truncate text-xs text-muted-foreground">
                   {user?.role}
