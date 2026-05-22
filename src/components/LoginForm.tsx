@@ -10,7 +10,7 @@ import { Button } from "./ui/button"
 import { loginUser} from "@/service/AuthService";
 import { NavLink, useNavigate } from "react-router";
 import { Loader2 } from "lucide-react";
-import { TokenService } from "@/service/TokenService";
+import { useAuth } from "@/assets/context/AuthContext";
 const formSchema = z.object({
         identifier: z.email("Por favor, ingresa un correo válido."),
         password: z
@@ -20,6 +20,7 @@ const formSchema = z.object({
 export function LoginForm (){
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
+    const { loginState } = useAuth();
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues :{
@@ -33,12 +34,10 @@ export function LoginForm (){
 
         try{
             const data = await loginUser(values);
-            
-            TokenService.setTokens(data.token, data.refreshToken);
+            loginState(data.token, data.refreshToken);
             toast.success("¡Login exitoso!", {
             description: 'Bienvenido a Code Panel.',
         });
-        console.log("respuesta del servidor", data);
         navigate("/dashboard")
 
         }catch (error: any) {

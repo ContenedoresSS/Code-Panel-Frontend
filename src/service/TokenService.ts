@@ -1,5 +1,16 @@
+import { jwtDecode } from "jwt-decode";
+import { toast } from "sonner";
+
 const ACCES_TOKEN = "accesToken";
 const REFRESH_TOKEN = "refreshToken";
+
+export interface DecodedToken {
+  id: number;
+  identifier: string;
+  role: string;
+  exp: number;
+  name: string;
+}
 
 export const TokenService = {
   getAccesToken: (): string | null => {
@@ -17,5 +28,33 @@ export const TokenService = {
   removeTokens: (): void => {
     localStorage.removeItem(ACCES_TOKEN);
     localStorage.removeItem(REFRESH_TOKEN);
+  },
+
+  getUserFromToken: () => {
+    const currentToken = TokenService.getAccesToken();
+    if (!currentToken) return null;
+
+    try {
+      const tokenDecode = jwtDecode<DecodedToken>(currentToken);
+      const currenTime = Date.now() / 1000;
+
+      if (tokenDecode.exp < currenTime) {
+        toast.error("El token ha expirado");
+        TokenService.removeTokens();
+        return null;
+      }
+
+      return {
+        id: tokenDecode.id,
+        identifier: tokenDecode.identifier,
+        role: tokenDecode.role,
+        name: tokenDecode.name,
+      };
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message;
+      toast.error("token invalido", { description: errorMessage });
+      TokenService.removeTokens();
+      return null;
+    }
   },
 };

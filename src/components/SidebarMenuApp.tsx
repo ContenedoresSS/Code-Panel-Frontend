@@ -1,3 +1,4 @@
+import { useAuth } from "@/assets/context/AuthContext";
 import {
   Sidebar,
   SidebarContent,
@@ -11,12 +12,18 @@ import {
   SidebarGroupContent
 } from "@/components/ui/sidebar"
 
-import { LayoutDashboard , User2, Code, Settings, Layers } from "lucide-react";
-import { Link } from "react-router";
+import { LayoutDashboard , User2, Code, Settings, Layers, KeyRound, LogOut, SquareChartGantt } from "lucide-react";
+import { Link, useNavigate } from "react-router";
 
 
 export function SidebarMenuApp () {
+const { user, logoutState } = useAuth();
+const navigate = useNavigate();
 
+const handleLogout = () => {
+    logoutState();
+    navigate("/login");
+  };
 return(
     <Sidebar>
       <SidebarHeader>
@@ -69,6 +76,35 @@ return(
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+              <SidebarMenuItem></SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+        <SidebarGroup>
+          <SidebarGroupLabel>ADMIN</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  {user?.role === 'God' && (
+                  
+                  <Link to={"/access"}>
+                  <KeyRound />
+                  <span>Accesos</span>
+                  </Link>
+                  )}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  {user?.role === 'God' && (
+                  <Link to={"/language"}>
+                  <SquareChartGantt />
+                  <span>Lenguaje</span>
+                  </Link>
+                  )}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -89,14 +125,39 @@ return(
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
-        <SidebarMenu>
+      <SidebarMenu>
         <SidebarMenuItem>
-          <SidebarMenuButton>
-            <User2 /> Username
-          </SidebarMenuButton>
+          {/* Usamos un div con flex para separar la info del botón */}
+          <div className="flex items-center justify-between w-full p-2 rounded-lg hover:bg-sidebar-accent transition-colors">
+            
+            {/* Lado izquierdo: Icono e Info del usuario */}
+            <div className="flex items-center gap-2 overflow-hidden">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                <User2 className="size-4" />
+              </div>
+              <div className="grid flex-1 text-left text-sm leading-tight">
+                <span className="truncate font-semibold">
+                  {user?.name|| 'Usuario'}
+                </span>
+                <span className="truncate text-xs text-muted-foreground">
+                  {user?.role}
+                </span>
+              </div>
+            </div>
+
+            {/* Lado derecho: Botón de Logout */}
+            <button
+              onClick={handleLogout}
+              className="p-2 text-muted-foreground hover:text-destructive transition-colors"
+              title="Cerrar sesión"
+            >
+              <LogOut className="size-4" />
+            </button>
+            
+          </div>
         </SidebarMenuItem>
       </SidebarMenu>
-      </SidebarFooter>
+    </SidebarFooter>
     </Sidebar>
 )
 }

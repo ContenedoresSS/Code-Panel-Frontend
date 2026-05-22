@@ -1,21 +1,15 @@
 
 import { BookOpen, FileText } from "lucide-react";
 import { StatCard } from "@/components/CardInfo";
-import { useEffect, useState } from "react";
+import { useAuth } from "@/assets/context/AuthContext";
 export default function Dashboard( ) {
-  const [userName, setUserName] = useState<string>();
-  useEffect(() => {
-      const storedName = localStorage.getItem("userName");
-      if (storedName) {
-          setUserName(storedName);
-      }
-  }, []);
+    const {user} =useAuth()
 return (
       <div className="flex flex-col items-center justify-center min-h-[70vh] w-full max-w-5xl mx-auto p-4">
       
       <div className="w-full text-left md:text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4 tracking-tight">
-          Bienvenido {userName}.
+          Bienvenido {user?.name}.
           </h1>
           <p className="text-lg text-muted-foreground">
           Aquí tienes un resumen de tu actividad académica hoy.
