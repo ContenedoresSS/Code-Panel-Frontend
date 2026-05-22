@@ -1,10 +1,8 @@
 
 import { BookOpen, FileText } from "lucide-react";
 import { StatCard } from "@/components/CardInfo";
-import { useEffect, useState } from "react";
 import { useAuth } from "@/assets/context/AuthContext";
 export default function Dashboard( ) {
-  const [userName, setUserName] = useState<string>();
     const {user} =useAuth()
 return (
       <div className="flex flex-col items-center justify-center min-h-[70vh] w-full max-w-5xl mx-auto p-4">

@@ -30,31 +30,31 @@ export const TokenService = {
     localStorage.removeItem(REFRESH_TOKEN);
   },
 
-  getUserFromToken: () =>{
+  getUserFromToken: () => {
     const currentToken = TokenService.getAccesToken();
-    if(!currentToken) return null;
+    if (!currentToken) return null;
 
     try {
       const tokenDecode = jwtDecode<DecodedToken>(currentToken);
       const currenTime = Date.now() / 1000;
 
-      if(tokenDecode.exp < currenTime){
+      if (tokenDecode.exp < currenTime) {
         toast.error("El token ha expirado");
         TokenService.removeTokens();
         return null;
       }
 
-      return{
-        id:tokenDecode.id,
+      return {
+        id: tokenDecode.id,
         identifier: tokenDecode.identifier,
         role: tokenDecode.role,
-        name: tokenDecode.name
-      }
+        name: tokenDecode.name,
+      };
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message
-      toast.error("token invalido", {description :errorMessage,});
+      const errorMessage = error.response?.data?.message;
+      toast.error("token invalido", { description: errorMessage });
       TokenService.removeTokens();
       return null;
     }
-  }
+  },
 };
