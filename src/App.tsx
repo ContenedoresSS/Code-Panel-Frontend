@@ -15,6 +15,7 @@ import { ThemeProvider } from './components/theme-provider';
 import { RoleGuard } from './guards/RoleGuard';
 import { ProtectedRoute } from './guards/ProtectedRoute';
 import Language from './pages/Language';
+import EmbedEditor from './pages/EmbedEditor';
 
 
 function App() {
@@ -22,12 +23,14 @@ function App() {
   return (
   <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
       <Routes>
+        <Route path="/embed/editor" element={<EmbedEditor />} />
         <Route path="/">
           <Route index element={<Navigate to="/login" replace />} />
           <Route path="login" element={<Login />} />
           <Route path="register" element={<Register />} />
           <Route path="403" element={<div className="p-10 text-center text-red-500 font-bold text-2xl">403 - Acceso Denegado</div>} />
         </Route>
+        
         <Route element={<ProtectedRoute />}>
           <Route element={<DashboardLayout />}>
             <Route path="dashboard" element={<Dashboard/>} />
