@@ -17,6 +17,7 @@ export default function EditorComponent({languages, initialCode,}: EditorPropsIn
   const [language, setLanguage] = useState<number>(initialCode?.languageId ?? languages[0]?.id ?? 1);
   const [code, setCode] = useState<string>(initialCode?.code || "");
 	const [darkMode, setDarkMode] = useState(false);
+  const [input, setInput] = useState<string>("");
 	const [fontSizes,setFontSize] = useState<number>(14);
   const [output, setOutput] = useState<string>("Esperando ejecución...");
   const [isExecuting, setIsExecuting] = useState(false);
@@ -29,6 +30,8 @@ export default function EditorComponent({languages, initialCode,}: EditorPropsIn
     }
   },[initialCode])
 
+  
+
   const handleRunCode = async () => {
     console.log("Código a enviar:", code);
     if (!code.trim()){
@@ -40,7 +43,8 @@ export default function EditorComponent({languages, initialCode,}: EditorPropsIn
     try {
       const payload = {
         languageId: language,
-        code: code
+        code: code,
+        stdin: input
       };
     const result = await executionCode(payload);
     setOutput(result.output);
@@ -185,6 +189,8 @@ export default function EditorComponent({languages, initialCode,}: EditorPropsIn
         <textarea 
           className="flex-1 w-full p-4 resize-none outline-none font-mono text-sm bg-transparent placeholder:text-muted-foreground/50"
           placeholder="Ingresa los valores de entrada..."
+          value={input}                                   
+          onChange={(e) => setInput(e.target.value)}  
         ></textarea>
       </div>
 

@@ -15,7 +15,8 @@ const formSchema = z.object({
   version: z.string().min(1,"La version es obligatoria (ej. 7.1)"),
   dockerImage: z.string().min(1,"La imagen de Docker es obligatoria (ej. java:3.9-alpine)"),
   executionCommand: z.string().min(1,"El comando es obligatorio (ej. npm run dev)"),
-  fileExtension: z.string().min(1,"La extensión es obligatoria (ej. .jar )")
+  fileExtension: z.string().min(1,"La extensión es obligatoria (ej. .jar )"),
+  monacoName: z.string().min(1,"El nombre de para monaco es obligatorio (ej. .javascript )")
 })
 export default function LanguageForm (){
   const [isLoading, setIsLoading] = useState(false);
@@ -27,6 +28,7 @@ export default function LanguageForm (){
       dockerImage: "",
       executionCommand: "",
       fileExtension: "",
+      monacoName:"",
     },
   })
 
@@ -98,22 +100,38 @@ export default function LanguageForm (){
           </FieldGroup>
 
           {/* Fila 2: Imagen de Docker (Ancho completo) */}
-          <Controller
-            name="dockerImage"
-            control={form.control}
-            render={({ field }) => (
-              <Field>
-                <FieldLabel htmlFor="dockerImage">Imagen Docker</FieldLabel>
-                <Input {...field} id="dockerImage" autoComplete="off" placeholder="ej. python:3.9-alpine" required />
-                {form.formState.errors.dockerImage && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {form.formState.errors.dockerImage.message}
-                  </p>
-                )}
-              </Field>
-            )}
-          />
-
+          <FieldGroup className="grid grid-cols-2 gap-4">
+            <Controller
+              name="dockerImage"
+              control={form.control}
+              render={({ field }) => (
+                <Field>
+                  <FieldLabel htmlFor="dockerImage">Imagen Docker</FieldLabel>
+                  <Input {...field} id="dockerImage" autoComplete="off" placeholder="ej. python:3.9-alpine" required />
+                  {form.formState.errors.dockerImage && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {form.formState.errors.dockerImage.message}
+                    </p>
+                  )}
+                </Field>
+              )}
+            />
+            <Controller
+              name="monacoName"
+              control={form.control}
+              render={({ field }) => (
+                <Field>
+                  <FieldLabel htmlFor="monacoName">Nombre Monaco</FieldLabel>
+                  <Input {...field} id="monacoName" autoComplete="off" placeholder="ej. python" required />
+                  {form.formState.errors.monacoName && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {form.formState.errors.monacoName.message}
+                    </p>
+                  )}
+                </Field>
+              )}
+            />
+          </FieldGroup>
           {/* Fila 3: Comando de Ejecución y Extensión */}
           <FieldGroup className="grid grid-cols-2 gap-4">
             <Controller
