@@ -1,11 +1,6 @@
-import { useSearchParams } from 'react-router';
 import EditorComponent from '../components/EditorComponent';
 
 export default function EmbedEditor() {
-  const [searchParams] = useSearchParams();
-  
-  
-  const langIdParam = searchParams.get('lang');
 
   const lenguajesSoportados = [
     { id: 1, name: "JavaScript", monacoId: "javascript" },

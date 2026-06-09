@@ -5,4 +5,5 @@ export interface LanguageResponse {
   dockerImage: string;
   executionCommand: string;
   fileExtension: string;
+  editorIdentifier: string;
 }
