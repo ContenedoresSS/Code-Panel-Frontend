@@ -10,9 +10,11 @@ import { Button } from './ui/button';
 interface EditorPropsInfo{
   languages: EditorLanguage[];
   initialCode?: EditorCodeFile;
+  onChangeCode?: (code: string) => void;
+  onChangeLanguage?: (languageId: number) => void;
 }
 
-export default function EditorComponent({languages, initialCode,}: EditorPropsInfo){
+export default function EditorComponent({languages, initialCode, onChangeCode, onChangeLanguage}: EditorPropsInfo){
 
   const [language, setLanguage] = useState<number>(initialCode?.languageId ?? languages[0]?.id ?? 1);
   const [code, setCode] = useState<string>(initialCode?.code || "");
@@ -23,12 +25,19 @@ export default function EditorComponent({languages, initialCode,}: EditorPropsIn
   const [isExecuting, setIsExecuting] = useState(false);
   const currentLanguage = languages.find(l => l.id === language)?.monacoId || "plaintext";
 
-  useEffect(() => {
+useEffect(() => {
     if (initialCode) {
       setLanguage(initialCode.languageId);
-      setCode(initialCode?.code);
+      
+      setCode((prevCode) => {
+        if (prevCode === "" || prevCode !== initialCode.code) {
+          return initialCode.code;
+        }
+        return prevCode;
+      });
     }
-  },[initialCode])
+
+  }, []);
 
   
 
@@ -57,10 +66,14 @@ export default function EditorComponent({languages, initialCode,}: EditorPropsIn
 
   }
 
-  const handleLanguageSelector = (value: string) =>{
-      setLanguage(Number(value));
-      setCode("");
-  }
+  const handleLanguageSelector = (value: string) => {
+    const newLangId = Number(value);
+    setLanguage(newLangId);
+    setCode(""); // Limpiamos el código al cambiar de lenguaje
+    if (onChangeLanguage) onChangeLanguage(newLangId);
+    if (onChangeCode) onChangeCode("");
+  };
+
 	const toggleTheme = () => {
     setDarkMode(!darkMode);
   };
@@ -141,7 +154,11 @@ export default function EditorComponent({languages, initialCode,}: EditorPropsIn
           width="100%"
           language={currentLanguage}
           value={code}
-          onChange={(val) => setCode(val || "")}
+          onChange={(val) => {
+            const newValue = val || "";
+            setCode(newValue);
+            if (onChangeCode) onChangeCode(newValue); // Avisamos al padre
+          }}
           theme={darkMode ? "vs-dark" : "vs-light"}
           options={{
             minimap: { enabled: false },

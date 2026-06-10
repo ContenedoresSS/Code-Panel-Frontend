@@ -3,5 +3,4 @@ export interface CourseProps {
   title: string;
   description: string;
   imageUrl: string;
-
 }

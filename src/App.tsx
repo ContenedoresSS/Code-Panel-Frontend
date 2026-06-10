@@ -16,7 +16,9 @@ import { RoleGuard } from './guards/RoleGuard';
 import { ProtectedRoute } from './guards/ProtectedRoute';
 import Language from './pages/Language';
 import EmbedEditor from './pages/EmbedEditor';
-
+import SubjectDetailView from './pages/CourseDetailView';
+import CreateActivityView from './pages/CreateActivityView';
+import EditActivityView from './pages/EditActivityView';
 
 function App() {
   
@@ -37,7 +39,9 @@ function App() {
             <Route path="setting" element={<Setting />} />
             <Route path="student" element={<Student/>} />
             <Route path="course" element={<Course />} />
-          
+              <Route path="/subject/:id" element={<SubjectDetailView />} />
+              <Route path="/subject/:id/activity/new" element={<CreateActivityView />} />
+              <Route path="/subject/:id/activity/:activityId/edit" element={<EditActivityView />} />
 
             <Route element={<RoleGuard allowedRole="God" />}>
               <Route path="access" element={<Access />} />
