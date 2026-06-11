@@ -16,7 +16,8 @@ const formSchema = z.object({
   dockerImage: z.string().min(1,"La imagen de Docker es obligatoria (ej. java:3.9-alpine)"),
   executionCommand: z.string().min(1,"El comando es obligatorio (ej. npm run dev)"),
   fileExtension: z.string().min(1,"La extensión es obligatoria (ej. .jar )"),
-  monacoName: z.string().min(1,"El nombre de para monaco es obligatorio (ej. .javascript )")
+  monacoName: z.string().min(1,"El nombre de para monaco es obligatorio (ej. .javascript )"),
+  editorIdentifier:z.string().min(1,"El nombre para el editor es obligatorio (ej. javascript)")
 })
 export default function LanguageForm (){
   const [isLoading, setIsLoading] = useState(false);
@@ -29,6 +30,7 @@ export default function LanguageForm (){
       executionCommand: "",
       fileExtension: "",
       monacoName:"",
+      editorIdentifier:"",
     },
   })
 

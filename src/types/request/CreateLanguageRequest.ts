@@ -4,5 +4,5 @@ export interface CreateLanguageRequest {
   dockerImage: string;
   executionCommand: string;
   fileExtension: string;
-  
+  editorIdentifier: string;
 }
