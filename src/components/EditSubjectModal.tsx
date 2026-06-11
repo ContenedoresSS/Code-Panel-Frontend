@@ -20,7 +20,7 @@ interface EditCourseModalProps {
   course: SubjectResponse | null; // Recibe el curso actual a editar
 }
 
-export function EditCourseModal({ isOpen, onClose, onSubmit, course }: EditCourseModalProps) {
+export function EditSubjecteModal({ isOpen, onClose, onSubmit, course }: EditCourseModalProps) {
   const [formData, setFormData] = useState<CreateSubjectRequest>({
     name: "",
   });

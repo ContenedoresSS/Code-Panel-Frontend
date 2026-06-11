@@ -15,42 +15,46 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, ArrowLeft, Save } from "lucide-react";
-
 import { createActivity } from "@/service/ActivityService";
 import { getAllLanguages } from "@/service/LanguageService";
-import type { LanguageResponse } from "@/types/response/LanguageResponse";
 import type { CreateActivityRequest } from "@/types/request/CreateActivityRequest";
 import type { EditorLanguage } from "@/types/EditorProps";
 
-// IMPORTAMOS TU EDITOR
 import EditorComponent from "@/components/EditorComponent";
+import type { SubjectResponse } from "@/types/response/SubjectResponse";
+import { getSubjectById } from "@/service/SubjectService";
+
 
 export default function CreateActivityView() {
-  const { id: subjectId } = useParams<{ id: string }>(); // El ID de la materia
+  const { id: subjectId } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const [languages, setLanguages] = useState<LanguageResponse[]>([]);
+  //const [languages, setLanguages] = useState<LanguageResponse[]>([]);
   const [editorLanguages, setEditorLanguages] = useState<EditorLanguage[]>([]);
   const [isLoadingLanguages, setIsLoadingLanguages] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [subject, setSubject] = useState<SubjectResponse | null>(null);
 
-  // Estado consolidado para el formulario
+  
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    languageId: 1, // Por defecto el primero
+    languageId: 1, 
     maxAttempts: "0",
     allowCopy: true,
     allowPaste: true,
-    starterCode: "", // Aquí guardaremos lo que escriba el profe
+    starterCode: "", 
   });
 
 useEffect(() => {
     const fetchLanguages = async () => {
       try {
         const data = await getAllLanguages();
-        setLanguages(data);
+        //setLanguages(data);
         
+        const subjectNameId = Number(subjectId)
+        const subjectData = await getSubjectById(subjectNameId);
+        setSubject(subjectData)
         const mappedLangs: EditorLanguage[] = data.map(lang => ({
           id: lang.id,
           name: `${lang.name} (${lang.version})`,
@@ -71,14 +75,6 @@ useEffect(() => {
     fetchLanguages();
   }, []);
 
-  const handleToggleChange = (field: keyof typeof formData) => (checked: boolean) => {
-    setFormData((prev) => ({ ...prev, [field]: checked }));
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData((prev) => ({ ...prev, [e.target.id]: e.target.value }));
-  };
-
   const handleSave = async () => {
     if (!formData.title || !subjectId) return;
 
@@ -93,9 +89,8 @@ useEffect(() => {
         maxAttempts: Number(formData.maxAttempts) || 0,
         allowCopy: formData.allowCopy,
         allowPaste: formData.allowPaste,
-        // Tu backend pide un arreglo de CodeFile para el starter code
         starterCode: formData.starterCode ? [{
-          name: "main", // Nombre por defecto del archivo
+          name: "main", 
           content: formData.starterCode
         }] : undefined
       };
@@ -111,7 +106,7 @@ useEffect(() => {
   };
 
   return (
-    // Contenedor principal: Ocupa el 100% del alto de la pantalla disponible y usa flex-col
+
     <div className="flex flex-col h-[calc(100vh-2rem)] bg-background">
       
       {/* 1. Encabezado Superior (Fijo) */}
@@ -119,11 +114,11 @@ useEffect(() => {
         <Breadcrumb className="mb-4">
           <BreadcrumbList>
             <BreadcrumbItem>
-              <BreadcrumbLink href="/subjects">Mis Cursos</BreadcrumbLink>
+              <BreadcrumbLink href="/course">Cursos</BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
-              <BreadcrumbLink href={`/subject/${subjectId}`}>Materia</BreadcrumbLink>
+              <BreadcrumbLink href={`/subject/${subjectId}`}>{subject?.name}</BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
@@ -158,7 +153,7 @@ useEffect(() => {
         </div>
       </div>
 
-      {/* 2. Cuerpo de la Vista (Dividido en 2 columnas) */}
+
       {/* El min-h-0 y overflow-hidden son la magia para que el editor no desborde la pantalla */}
       <div className="flex flex-1 min-h-0 overflow-hidden p-6 gap-6 pt-6">
         

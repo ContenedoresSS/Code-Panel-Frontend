@@ -8,7 +8,6 @@ import { Navigate } from 'react-router';
 import DashboardLayout from './pages/DashboardLayout';
 import Dashboard from './pages/Dashboard';
 import Setting from './pages/Setting';
-import Course from './pages/Course';
 import Student from './pages/Student';
 import Access from './pages/Access';
 import { ThemeProvider } from './components/theme-provider';
@@ -16,9 +15,10 @@ import { RoleGuard } from './guards/RoleGuard';
 import { ProtectedRoute } from './guards/ProtectedRoute';
 import Language from './pages/Language';
 import EmbedEditor from './pages/EmbedEditor';
-import SubjectDetailView from './pages/CourseDetailView';
+import SubjectDetailView from './pages/SubjectDetailView';
 import CreateActivityView from './pages/CreateActivityView';
 import EditActivityView from './pages/EditActivityView';
+import Subject from './pages/Subject';
 
 function App() {
   
@@ -38,7 +38,7 @@ function App() {
             <Route path="dashboard" element={<Dashboard/>} />
             <Route path="setting" element={<Setting />} />
             <Route path="student" element={<Student/>} />
-            <Route path="course" element={<Course />} />
+            <Route path="course" element={<Subject/>} />
               <Route path="/subject/:id" element={<SubjectDetailView />} />
               <Route path="/subject/:id/activity/new" element={<CreateActivityView />} />
               <Route path="/subject/:id/activity/:activityId/edit" element={<EditActivityView />} />

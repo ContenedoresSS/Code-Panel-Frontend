@@ -1,15 +1,15 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { GripVertical, MoreVertical, Code2, Calendar } from "lucide-react";
+import { GripVertical, MoreVertical, Code2, Calendar, Check, CodeXml } from "lucide-react";
 import type { ActivitySummaryResponse } from '@/types/response/ActivitySummaryResponse';
+import { useState } from 'react';
 
 interface SortableActivityItemProps {
   activity: ActivitySummaryResponse;
@@ -19,6 +19,7 @@ interface SortableActivityItemProps {
 
 export function SortableActivityItem({ activity, onEdit, onDelete }: SortableActivityItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: activity.id });
+  const [isCopied, setIsCopied] = useState(false);
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -26,12 +27,23 @@ export function SortableActivityItem({ activity, onEdit, onDelete }: SortableAct
     zIndex: isDragging ? 10 : 1,
   };
 
-  // Formatear la fecha para que se vea legible (Ej: "12 de oct, 2026")
   const formattedDate = new Date(activity.createdAt).toLocaleDateString('es-ES', {
     day: 'numeric',
     month: 'short',
     year: 'numeric'
   });
+
+  const handleCopyIframe = () => {
+    // Aquí construirás la URL real de tu Iframe más adelante
+    // Por ahora usamos una estructura de ejemplo basándonos en tu dominio
+    const iframeCode = `<iframe src="https://codepanel.orchfr.duckdns.org/embed/activity/${activity.id}" width="100%" height="600px" style="border:none; border-radius:8px;"></iframe>`;
+    
+    navigator.clipboard.writeText(iframeCode).then(() => {
+      setIsCopied(true);
+      
+      setTimeout(() => setIsCopied(false), 2000);
+    });
+  };
 
   return (
     <div 
@@ -68,9 +80,29 @@ export function SortableActivityItem({ activity, onEdit, onDelete }: SortableAct
           <Calendar className="w-3.5 h-3.5" />
           {formattedDate}
         </div>
-        <Badge variant="outline" className="dark:border-zinc-700">
-          ID Lenguaje: {activity.languageId}
-        </Badge>
+        <Button 
+          variant={isCopied ? "default" : "outline"} 
+          size="sm" 
+          className={`h-8 gap-1.5 transition-all duration-300 ${
+            isCopied 
+              ? "bg-emerald-500 hover:bg-emerald-600 text-white border-emerald-500" 
+              : "text-muted-foreground hover:text-foreground dark:border-zinc-700"
+          }`}
+          onClick={handleCopyIframe}
+          title="Copiar código Iframe"
+        >
+        {isCopied ? (
+            <>
+              <Check className="w-3.5 h-3.5" />
+              Copiado
+            </>
+        ) : (
+            <>
+              <CodeXml className="w-3.5 h-3.5" />
+              Iframe
+            </>
+        )}
+        </Button>
       </div>
 
       {/* Opciones */}
@@ -84,7 +116,7 @@ export function SortableActivityItem({ activity, onEdit, onDelete }: SortableAct
           <DropdownMenuItem onClick={() => onEdit?.(activity.id)}>
             Editar actividad
           </DropdownMenuItem>
-          <DropdownMenuItem>Configurar tests</DropdownMenuItem>
+          <DropdownMenuItem>Duplicar actividad</DropdownMenuItem>
           <DropdownMenuItem 
             className="text-destructive focus:text-destructive"
             onClick={() => onDelete?.(activity.id)}

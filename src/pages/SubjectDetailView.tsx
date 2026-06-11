@@ -41,21 +41,18 @@ export default function SubjectDetailView() {
   const navigate = useNavigate();
 
   const [subject, setSubject] = useState<SubjectResponse | null>(null);
-  // <-- CORREGIDO: Usamos el tipo correcto de tu backend en vez de ActivityUI
   const [activities, setActivities] = useState<ActivitySummaryResponse[]>([]); 
   const [isLoading, setIsLoading] = useState(true);
 
-  // --- CARGA DE DATOS ---
   useEffect(() => {
     const fetchSubjectAndActivities = async () => {
       if (!id) return;
       const subjectId = Number(id);
       try {
         setIsLoading(true);
-        // Hacemos las dos peticiones en paralelo
         const [subjectData, activitiesData] = await Promise.all([
           getSubjectById(subjectId),
-          getActivitiesBySubject(id) // <-- CORREGIDO: Llamada directa a tu función exportada
+          getActivitiesBySubject(id) 
         ]);
 
         setSubject(subjectData);
@@ -129,11 +126,7 @@ export default function SubjectDetailView() {
       <Breadcrumb className="mb-6">
         <BreadcrumbList>
           <BreadcrumbItem>
-            <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbLink href="/subjects">Mis Cursos</BreadcrumbLink>
+            <BreadcrumbLink href="/course">Cursos</BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>

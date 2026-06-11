@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router";
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +13,11 @@ import { getAllLanguages } from "@/service/LanguageService";
 import type { UpdateActivityRequest } from "@/types/request/UpdateActivityRequest";
 import type { EditorLanguage } from "@/types/EditorProps";
 import EditorComponent from "@/components/EditorComponent";
+import type { SubjectResponse } from "@/types/response/SubjectResponse";
+import { getSubjectById } from "@/service/SubjectService";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
+
+
 
 export default function EditActivityView() {
   // Obtenemos AMBOS parámetros de la URL
@@ -23,6 +27,7 @@ export default function EditActivityView() {
   const [editorLanguages, setEditorLanguages] = useState<EditorLanguage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [subject, setSubject] = useState<SubjectResponse | null>(null);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -39,13 +44,16 @@ export default function EditActivityView() {
     const fetchInitialData = async () => {
       if (!activityId) return;
 
+      const numericSubjectId = Number(subjectId);
       try {
         setIsLoading(true);
         // Pedimos los lenguajes y la información de LA actividad en paralelo
-        const [langsData, activityData] = await Promise.all([
+        const [langsData, activityData, subjectData] = await Promise.all([
           getAllLanguages(),
-          getActivitiesById(activityId) 
+          getActivitiesById(activityId),
+          getSubjectById(numericSubjectId)
         ]);
+        
 
         // Mapeamos lenguajes
         const mappedLangs = langsData.map(lang => ({
@@ -54,6 +62,7 @@ export default function EditActivityView() {
           monacoId: lang.editorIdentifier
         }));
         setEditorLanguages(mappedLangs);
+        setSubject(subjectData);
 
         // Extraemos el código inicial si existe (es un array en la BD)
       let initialCodeStr = "";
@@ -132,6 +141,21 @@ export default function EditActivityView() {
   return (
     <div className="flex flex-col h-[calc(100vh-2rem)] bg-background">
       <div className="flex-none p-6 pb-4 border-b border-border">
+        <Breadcrumb className="mb-4">
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/course">Cursos</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink href={`/subject/${subjectId}`}>{subject?.name}</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>{formData.title}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
         {/* ... Breadcrumb (cambia "Crear" por "Editar") ... */}
         <div className="flex justify-between items-center mt-4">
           <div className="flex items-center gap-3">

@@ -1,19 +1,19 @@
 import { useState, useEffect } from "react";
-import { CourseCard} from "@/components/CourseCard";
+import { CourseCard} from "@/components/SubjectCard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Plus, Loader2 } from "lucide-react";
-import { CreateCourseModal, } from "@/components/CreateCourseModal";
+import { CreateSubjectModal, } from "@/components/CreateSubjectModal";
 import type { SubjectResponse } from "@/types/response/SubjectResponse";
 import { createSubject, deleteSubject, getSubjectsByUser, updateSuject } from "@/service/SubjectService";
 import { toast } from "sonner";
 import type { CreateSubjectRequest } from "@/types/request/CreateSubjectRequest";
 import { useNavigate } from "react-router";
-import { EditCourseModal } from "@/components/EditCourseModal";
+import { EditSubjecteModal } from "@/components/EditSubjectModal";
 
 
 
-export default function Course() {
+export default function Subject() {
   const [courses, setCourses] = useState<SubjectResponse[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -147,14 +147,14 @@ const handleDeleteSubject = async (id: number | string) => {
       )}
 
       {/* Modal de Creación */}
-      <CreateCourseModal 
+      <CreateSubjectModal 
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onSubmit={handleSaveNewSubject}
       />
 
       {/* <-- 5. Instanciamos el Modal de Edición */}
-      <EditCourseModal 
+      <EditSubjecteModal 
         isOpen={isEditModalOpen}
         onClose={() => {
           setIsEditModalOpen(false);

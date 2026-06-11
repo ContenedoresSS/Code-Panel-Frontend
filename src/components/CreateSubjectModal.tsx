@@ -21,7 +21,7 @@ interface CreateCourseModalProps {
   onSubmit: (data: CreateSubjectRequest) => void;
 }
 
-export function CreateCourseModal({ isOpen, onClose, onSubmit }: CreateCourseModalProps) {
+export function CreateSubjectModal({ isOpen, onClose, onSubmit }: CreateCourseModalProps) {
   const [name, setName] = useState("");
 
 
