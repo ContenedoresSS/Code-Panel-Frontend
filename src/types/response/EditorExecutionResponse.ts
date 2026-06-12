@@ -1,4 +1,8 @@
+import type { ExecutionStatus } from "../enum/ExecutionStatus";
+
 export interface EditorExecutionResponse {
-  success: boolean;
-  output: string;
+  status: ExecutionStatus;
+  stdout: string;
+  stderr: string;
+  timeMs: number;
 }
