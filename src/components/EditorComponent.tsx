@@ -6,6 +6,7 @@ import { Download,  Upload, ALargeSmall, Sun, Moon, Circle, CheckCircle, Play} f
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { executionCode } from '@/service/EditorService';
 import { Button } from './ui/button';
+import { encodeToBase64, decodeFromBase64 } from '@/utils/base64.util';
 
 interface EditorPropsInfo{
   languages: EditorLanguage[];
@@ -37,7 +38,7 @@ useEffect(() => {
       });
     }
 
-  }, []);
+  }, [initialCode]);
 
   
 
@@ -49,10 +50,11 @@ useEffect(() => {
     }
     setIsExecuting(true);
     setOutput("Compilando y ejecutando...");
+
     try {
       const payload = {
         languageId: language,
-        code: code,
+        code: encodeToBase64(code),
         stdin: input
       };
     const result = await executionCode(payload);

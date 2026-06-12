@@ -23,6 +23,7 @@ import type { EditorLanguage } from "@/types/EditorProps";
 import EditorComponent from "@/components/EditorComponent";
 import type { SubjectResponse } from "@/types/response/SubjectResponse";
 import { getSubjectById } from "@/service/SubjectService";
+import { encodeToBase64 } from "@/utils/base64.util";
 
 
 export default function CreateActivityView() {
@@ -91,7 +92,7 @@ useEffect(() => {
         allowPaste: formData.allowPaste,
         starterCode: formData.starterCode ? [{
           name: "main", 
-          content: formData.starterCode
+          content: encodeToBase64(formData.starterCode)
         }] : undefined
       };
 
