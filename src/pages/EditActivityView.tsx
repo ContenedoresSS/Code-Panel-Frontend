@@ -16,6 +16,7 @@ import EditorComponent from "@/components/EditorComponent";
 import type { SubjectResponse } from "@/types/response/SubjectResponse";
 import { getSubjectById } from "@/service/SubjectService";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
+import { encodeToBase64, decodeFromBase64 } from "@/utils/base64.util";
 
 
 
@@ -75,7 +76,8 @@ export default function EditActivityView() {
 
             // Verificamos que sea un arreglo y tenga contenido
             if (Array.isArray(parsedCode) && parsedCode.length > 0) {
-              initialCodeStr = parsedCode[0].content || "";
+              const rawContent = parsedCode[0].content || "";
+              initialCodeStr = decodeFromBase64(rawContent);
             }
           } catch (e) {
             console.error("No se pudo extraer el starterCode:", e);
@@ -118,7 +120,7 @@ export default function EditActivityView() {
         allowPaste: formData.allowPaste,
         starterCode: formData.starterCode ? [{
           name: "main",
-          content: formData.starterCode
+          content: encodeToBase64(formData.starterCode)
         }] : undefined
       };
 

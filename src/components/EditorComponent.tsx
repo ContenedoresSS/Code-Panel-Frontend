@@ -6,6 +6,9 @@ import { Download,  Upload, ALargeSmall, Sun, Moon, Circle, CheckCircle, Play} f
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { executionCode } from '@/service/EditorService';
 import { Button } from './ui/button';
+import { encodeToBase64, decodeFromBase64 } from '@/utils/base64.util';
+import { ExecutionStatus } from '@/types/enum/ExecutionStatus';
+import type { EditorExecutionResponse } from '@/types/response/EditorExecutionResponse';
 
 interface EditorPropsInfo{
   languages: EditorLanguage[];
@@ -37,26 +40,54 @@ useEffect(() => {
       });
     }
 
-  }, []);
+  }, [initialCode]);
 
   
 
   const handleRunCode = async () => {
-    console.log("Código a enviar:", code);
     if (!code.trim()){
       setOutput(" El editor está vacío. Escribe algo de código antes de ejecutar.");
       return;
     }
     setIsExecuting(true);
     setOutput("Compilando y ejecutando...");
+
     try {
       const payload = {
         languageId: language,
-        code: code,
+        code: encodeToBase64(code),
         stdin: input
       };
-    const result = await executionCode(payload);
-    setOutput(result.output);
+    const result: EditorExecutionResponse = await executionCode(payload);
+    let formattedOutput = "ola";
+
+    switch (result.status) {
+        case ExecutionStatus.SUCCESS:
+          formattedOutput = result.stdout;
+          formattedOutput += `\n\nEjecución exitosa en ${result.timeMs} ms.`;
+          break;
+          
+        case ExecutionStatus.COMPILE_ERROR:
+          formattedOutput = `Error de Compilación:\n\n${result.stderr}`;
+          break;
+          
+        case ExecutionStatus.RUNTIME_ERROR:
+          formattedOutput = `Error de Ejecución (Runtime Error):\n\n${result.stderr}`;
+          if (result.stdout) {
+            formattedOutput += `\n\nSalida estándar parcial:\n${result.stdout}`;
+          }
+          break;
+          
+        case ExecutionStatus.TIME_LIMIT_EXCEEDED:
+          formattedOutput = `Límite de Tiempo Excedido.\nTu código tardó más de 10 segundos en ejecutarse. Revisa si tienes un bucle infinito (while/for) o si estás esperando un input que no proporcionaste.`;
+          break;
+          
+        default:
+          formattedOutput = "Estado de ejecución desconocido.";
+      }
+
+      setOutput(formattedOutput);
+
     }catch(error){
       console.error("Error ejecutando el código:", error);
       setOutput("Error de comunicación con el servidor.");
