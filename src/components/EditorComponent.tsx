@@ -1,4 +1,5 @@
 import type { EditorCodeFile, EditorLanguage } from '@/types/EditorProps';
+import type { EditorExecutionResponse } from '@/types/response/EditorExecutionResponse';
 import Editor from '@monaco-editor/react';
 import { useEffect, useState } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
@@ -6,9 +7,8 @@ import { Download,  Upload, ALargeSmall, Sun, Moon, Circle, CheckCircle, Play} f
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { executionCode } from '@/service/EditorService';
 import { Button } from './ui/button';
-import { encodeToBase64, decodeFromBase64 } from '@/utils/base64.util';
+import { encodeToBase64 } from '@/utils/base64.util';
 import { ExecutionStatus } from '@/types/enum/ExecutionStatus';
-import type { EditorExecutionResponse } from '@/types/response/EditorExecutionResponse';
 
 interface EditorPropsInfo{
   languages: EditorLanguage[];
@@ -56,7 +56,7 @@ useEffect(() => {
       const payload = {
         languageId: language,
         code: encodeToBase64(code),
-        stdin: input
+        stdin: encodeToBase64(input)
       };
     const result: EditorExecutionResponse = await executionCode(payload);
     let formattedOutput = "ola";
@@ -88,9 +88,18 @@ useEffect(() => {
 
       setOutput(formattedOutput);
 
-    }catch(error){
-      console.error("Error ejecutando el código:", error);
-      setOutput("Error de comunicación con el servidor.");
+    }catch(error: any){
+      if (error?.response?.status === 429) {
+        setOutput("Límite de ejecuciones excedido. Por favor, espera cinco minutos antes de volver a intentarlo.");
+        return;
+      }
+
+      if (error?.response?.data?.error) {
+        setOutput(`Error: ${error.response.data.error}`);
+        return;
+      }
+
+      setOutput("Error de comunicación con el servidor. Revisa tu conexión o intenta de nuevo más tarde.");
     } finally {
       setIsExecuting(false);
     }
@@ -100,9 +109,7 @@ useEffect(() => {
   const handleLanguageSelector = (value: string) => {
     const newLangId = Number(value);
     setLanguage(newLangId);
-    setCode(""); // Limpiamos el código al cambiar de lenguaje
     if (onChangeLanguage) onChangeLanguage(newLangId);
-    if (onChangeCode) onChangeCode("");
   };
 
 	const toggleTheme = () => {
