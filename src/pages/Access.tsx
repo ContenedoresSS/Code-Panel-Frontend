@@ -1,8 +1,8 @@
 
 import { InvitationTable } from "@/components/InvitationTable";
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Check, Copy, Key, Plus, RefreshCw } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Check, Copy, Plus, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { createInvitation, deleteInvitation, getAllInvitations, updateInvitation } from "@/service/InvitationsService";
