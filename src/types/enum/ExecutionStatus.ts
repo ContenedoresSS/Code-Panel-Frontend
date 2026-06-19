@@ -5,4 +5,4 @@ export const ExecutionStatus = {
   COMPILE_ERROR: "COMPILE_ERROR",
 } as const;
 
-export type ExecutionStatus = typeof ExecutionStatus[keyof typeof ExecutionStatus];
+export type ExecutionStatus = (typeof ExecutionStatus)[keyof typeof ExecutionStatus];
