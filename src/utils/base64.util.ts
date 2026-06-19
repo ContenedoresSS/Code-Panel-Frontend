@@ -1,9 +1,7 @@
 export const encodeToBase64 = (text: string): string => {
   try {
     const bytes = new TextEncoder().encode(text);
-    const binString = Array.from(bytes, (byte) =>
-      String.fromCharCode(byte)
-    ).join("");
+    const binString = Array.from(bytes, (byte) => String.fromCharCode(byte)).join("");
     return btoa(binString);
   } catch (error) {
     console.error("Error codificando a Base64:", error);
