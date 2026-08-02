@@ -11,6 +11,7 @@ import { loginUser} from "@/service/AuthService";
 import { NavLink, useNavigate } from "react-router";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/assets/context/AuthContext";
+import { logger } from "@/lib/logger";
 const formSchema = z.object({
         identifier: z.email("Por favor, ingresa un correo válido."),
         password: z
@@ -42,7 +43,7 @@ export function LoginForm (){
 
         }catch (error: any) {
             const status = error.response?.status;
-            console.log(error);
+            logger.error("Login error:", error);
             toast.error(" Credenciales invalidas o Session Expirada", {
             description:"Error: "+ status + " Por favor verifica tus credenciales",
             });

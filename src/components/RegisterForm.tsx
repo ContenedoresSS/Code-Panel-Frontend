@@ -10,6 +10,7 @@ import { Button } from "./ui/button"
 import { registerUser } from "@/service/AuthService";
 import { useNavigate } from "react-router";
 import { Loader2 } from "lucide-react";
+import { logger } from "@/lib/logger";
 const formSchema = z.object({
       name: z
       .string()
@@ -59,7 +60,7 @@ export function RegisterForm (){
       }catch (error: any) {
 
       const errorMessage = error.response?.data?.message || "Hubo un error en el servidor";
-      console.log(error);
+      logger.error("Register error:", error);
           
           toast.error("Error al registrar", {
           description: errorMessage,

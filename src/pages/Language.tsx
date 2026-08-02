@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import type { LanguageResponse } from "@/types/response/LanguageResponse";
 import { deleteLanguage } from "@/service/LanguageService";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 
 export default function Language (){
   const [showForm, setShowForm] = useState(false);
@@ -19,7 +20,7 @@ export default function Language (){
           const data = await getAllLanguages();
           setLanguages(data);
         } catch (error) {
-          console.error("Error cargando lenguajes", error);
+          logger.error("Error cargando lenguajes", error);
         } finally {
           setIsLoading(false);
         }
@@ -37,7 +38,7 @@ export default function Language (){
 
       toast.success("Lenguaje eliminado correctamente");
     } catch (error) {
-      console.error("Error al eliminar:", error);
+      logger.error("Error al eliminar:", error);
       toast.error("No se pudo eliminar el lenguaje");
     }
   };
@@ -67,7 +68,7 @@ export default function Language (){
             languages={languages} 
             isLoading={isLoading} 
             onDelete={handleDelete}
-            onEdit={(lang) => console.log("Editar", lang)}
+            onEdit={() => undefined}
           />
         </div>
     </div>

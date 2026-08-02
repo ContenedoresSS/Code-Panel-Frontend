@@ -1,0 +1,510 @@
+# API.md — Endpoints del Backend
+
+Referencia de todos los endpoints consumidos por el frontend de CodePanel.
+
+**Base URL:** `https://codepanel.orchfr.duckdns.org/api/v1` (producción) / `http://localhost:3000/api/v1` (desarrollo)
+
+---
+
+## Autenticación
+
+La mayoría de los endpoints requieren el header:
+
+```
+Authorization: Bearer <accessToken>
+```
+
+Excepto: `/auth/login`, `/auth/register`, y el endpoint de ejecución desde el editor embebido.
+
+---
+
+## Auth
+
+### `POST /auth/login`
+
+Inicia sesión con identificador y contraseña.
+
+**Body:**
+```json
+{
+  "identifier": "string",
+  "password": "string"
+}
+```
+
+**Response:** `AuthResponse`
+```json
+{
+  "token": "string (JWT access token)",
+  "refreshToken": "string"
+}
+```
+
+---
+
+### `POST /auth/register`
+
+Registra un nuevo usuario.
+
+**Body:**
+```json
+{
+  "name": "string",
+  "lastName": "string",
+  "email": "string",
+  "password": "string",
+  "identifier": "string",
+  "invitationCode": "string (opcional)"
+}
+```
+
+**Response:** `RegisterResponse`
+```json
+{
+  "id": "string",
+  "email": "string",
+  "name": "string",
+  "lastName": "string",
+  "role": "string (God | Teacher | Student)"
+}
+```
+
+---
+
+### `POST /auth/refreshSession`
+
+Renueva el access token usando el refresh token.
+
+**Body:** `string` — refresh token como string plano (no JSON)
+
+**Response:** `AuthResponse`
+```json
+{
+  "token": "string (nuevo JWT access token)",
+  "refreshToken": "string (nuevo refresh token)"
+}
+```
+
+---
+
+## Subject (Materias/Cursos)
+
+### `GET /subject`
+
+Obtiene todas las materias del usuario autenticado.
+
+**Response:** `PaginatedResponse<SubjectResponse>`
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "name": "Programación Estructurada",
+      "userId": "string"
+    }
+  ],
+  "totalCount": 5
+}
+```
+
+---
+
+### `GET /subject/:id`
+
+Obtiene una materia por ID.
+
+**Response:** `SubjectResponse`
+```json
+{
+  "id": 1,
+  "name": "Programación Estructurada",
+  "userId": "string"
+}
+```
+
+---
+
+### `POST /subject`
+
+Crea una nueva materia.
+
+**Body:**
+```json
+{
+  "name": "string"
+}
+```
+
+**Response:** `SubjectResponse`
+
+---
+
+### `PUT /subject/:id`
+
+Actualiza una materia existente.
+
+**Body:**
+```json
+{
+  "name": "string"
+}
+```
+
+**Response:** `SubjectResponse`
+
+---
+
+### `DELETE /subject/:id`
+
+Elimina una materia.
+
+**Response:** `void` (204 No Content)
+
+---
+
+## Activity (Actividades)
+
+### `GET /activity`
+
+Obtiene todas las actividades. El frontend filtra por `subjectId` del lado del cliente.
+
+**Response:** Lista de `ActivitySummaryResponse[]`
+```json
+[
+  {
+    "id": "string",
+    "professorId": "string",
+    "languageId": 1,
+    "subjectId": 1,
+    "title": "Hola Mundo en Python",
+    "description": "Escribe tu primer programa",
+    "createdAt": "2024-01-15T10:30:00Z"
+  }
+]
+```
+
+---
+
+### `GET /activity/:id`
+
+Obtiene una actividad por ID (incluye `starterCode` y configuración completa).
+
+**Response:** `ActivityResponse`
+```json
+{
+  "id": "string",
+  "professorId": "string",
+  "subjectId": 1,
+  "languageId": 1,
+  "title": "Hola Mundo en Python",
+  "description": "Escribe tu primer programa",
+  "starterCode": [
+    {
+      "name": "main.py",
+      "content": "print('Hello')"
+    }
+  ],
+  "maxAttempts": 5,
+  "allowCopy": true,
+  "allowPaste": false,
+  "createdAt": "2024-01-15T10:30:00Z"
+}
+```
+
+---
+
+### `POST /activity`
+
+Crea una nueva actividad.
+
+**Body:**
+```json
+{
+  "subjectId": 1,
+  "languageId": 1,
+  "title": "string",
+  "description": "string (opcional)",
+  "starterCode": [
+    {
+      "name": "string",
+      "content": "string"
+    }
+  ],
+  "maxAttempts": 5,
+  "allowCopy": true,
+  "allowPaste": false
+}
+```
+
+| Campo          | Tipo          | Requerido | Descripción                              |
+| -------------- | ------------- | :-------: | ---------------------------------------- |
+| `subjectId`    | number        |    Sí     | ID de la materia                         |
+| `languageId`   | number        |    Sí     | ID del lenguaje de programación          |
+| `title`        | string        |    Sí     | Título de la actividad                   |
+| `description`  | string        |    No     | Descripción/instrucciones                |
+| `starterCode`  | CodeFile[]    |    No     | Archivos de código inicial               |
+| `maxAttempts`  | number        |    No     | Límite de intentos                       |
+| `allowCopy`    | boolean       |    No     | Permitir copiar en el editor             |
+| `allowPaste`   | boolean       |    No     | Permitir pegar en el editor              |
+
+**CodeFile:**
+```json
+{
+  "name": "main.py",
+  "content": "print('Hello')"
+}
+```
+
+**Response:** `ActivityResponse`
+
+---
+
+### `PUT /activity/:id`
+
+Actualiza una actividad existente (todos los campos son opcionales).
+
+**Body:**
+```json
+{
+  "title": "string",
+  "description": "string",
+  "starterCode": [ { "name": "string", "content": "string" } ],
+  "maxAttempts": 5,
+  "allowCopy": true,
+  "allowPaste": false
+}
+```
+
+**Response:** `ActivityResponse`
+
+---
+
+### `DELETE /activity/:id`
+
+Elimina una actividad.
+
+**Response:** `void` (204 No Content)
+
+---
+
+## Execution (Ejecución de Código)
+
+### `POST /execution/run`
+
+Ejecuta código en un contenedor Docker aislado. El código y stdin deben enviarse codificados en **Base64**.
+
+**Body:** `EditorExecutionRequest`
+```json
+{
+  "languageId": 1,
+  "code": "cHJpbnQoJ0hlbGxvIFdvcmxkJyk=",
+  "stdin": "dXNlciBpbnB1dA=="
+}
+```
+
+| Campo        | Tipo   | Requerido | Descripción                                      |
+| ------------ | ------ | :-------: | ------------------------------------------------ |
+| `languageId` | number |    Sí     | ID del lenguaje (1=JS, 2=Python, 3=TypeScript)   |
+| `code`       | string |    Sí     | Código fuente codificado en Base64 (UTF-8)       |
+| `stdin`      | string |    No     | Entrada estándar codificada en Base64 (UTF-8)    |
+
+**Response:** `EditorExecutionResponse`
+```json
+{
+  "status": "SUCCESS",
+  "stdout": "Hello World\n",
+  "stderr": "",
+  "timeMs": 42
+}
+```
+
+| Campo    | Tipo   | Descripción                                                   |
+| -------- | ------ | ------------------------------------------------------------- |
+| `status` | string | Estado de ejecución (ver tabla abajo)                         |
+| `stdout` | string | Salida estándar del programa                                  |
+| `stderr` | string | Salida de error (compilación o runtime)                       |
+| `timeMs` | number | Tiempo de ejecución en milisegundos                           |
+
+### ExecutionStatus
+
+| Valor                  | Significado                                            |
+| ---------------------- | ------------------------------------------------------ |
+| `SUCCESS`              | Ejecución exitosa                                      |
+| `COMPILE_ERROR`        | Error de compilación o sintaxis                        |
+| `RUNTIME_ERROR`        | Error en tiempo de ejecución (excepción)               |
+| `TIME_LIMIT_EXCEEDED`  | El código excedió el límite de tiempo (~10 segundos)   |
+
+### Rate Limiting
+
+Si se excede el límite de ejecuciones, el backend responde con **HTTP 429**. El frontend muestra:
+
+> "Límite de ejecuciones excedido. Por favor, espera cinco minutos antes de volver a intentarlo."
+
+---
+
+## Programming Language (Admin - Solo God)
+
+### `GET /programming-language`
+
+Obtiene todos los lenguajes de programación registrados.
+
+**Response:** `LanguageResponse[]`
+```json
+[
+  {
+    "id": 1,
+    "name": "JavaScript",
+    "version": "20.x",
+    "dockerImage": "node:20-alpine",
+    "executionCommand": "node {file}",
+    "fileExtension": ".js",
+    "editorIdentifier": "javascript"
+  }
+]
+```
+
+---
+
+### `POST /programming-language`
+
+Crea un nuevo lenguaje de programación.
+
+**Body:**
+```json
+{
+  "name": "Java",
+  "version": "21",
+  "dockerImage": "openjdk:21-slim",
+  "executionCommand": "javac {file} && java {class}",
+  "fileExtension": ".java",
+  "editorIdentifier": "java"
+}
+```
+
+| Campo               | Tipo   | Descripción                                    |
+| ------------------- | ------ | ---------------------------------------------- |
+| `name`              | string | Nombre del lenguaje                            |
+| `version`           | string | Versión del compilador/intérprete              |
+| `dockerImage`       | string | Imagen Docker usada para ejecución             |
+| `executionCommand`  | string | Comando de ejecución (placeholders: `{file}`)  |
+| `fileExtension`     | string | Extensión de archivo (ej: `.py`, `.js`)        |
+| `editorIdentifier`  | string | Identificador de Monaco (ej: `python`, `java`) |
+
+**Response:** `LanguageResponse`
+
+---
+
+### `DELETE /programming-language/:id`
+
+Elimina un lenguaje de programación.
+
+**Response:**
+```json
+{
+  "message": "Lenguaje eliminado correctamente"
+}
+```
+
+---
+
+## Invitation (Códigos de Invitación - Admin, Solo God)
+
+### `GET /invitation?page=1&limit=10`
+
+Obtiene códigos de invitación paginados.
+
+**Query Params:**
+
+| Param  | Tipo   | Default | Descripción          |
+| ------ | ------ | :-----: | -------------------- |
+| `page` | number |    1    | Número de página     |
+| `limit`| number |   10    | Items por página     |
+
+**Response:** `PaginatedInvitationResponse`
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "code": "ABC123",
+      "roleId": 3,
+      "isUsed": false,
+      "createdAt": "2024-01-15T10:30:00Z",
+      "role": {
+        "name": "Teacher"
+      }
+    }
+  ],
+  "totalCount": 25
+}
+```
+
+---
+
+### `POST /invitation`
+
+Crea un nuevo código de invitación.
+
+**Body:**
+```json
+{
+  "roleId": 3
+}
+```
+
+| Campo    | Tipo   | Descripción                                   |
+| -------- | ------ | --------------------------------------------- |
+| `roleId` | number | ID del rol (3 = Teacher en el frontend actual)|
+
+**Response:** `InvitationDTO`
+
+---
+
+### `PUT /invitation/:id`
+
+Actualiza un código de invitación (marcar como usado, cambiar rol).
+
+**Body:**
+```json
+{
+  "roleId": 3,
+  "isUsed": true
+}
+```
+
+**Response:** `InvitationDTO`
+
+---
+
+### `DELETE /invitation/:id`
+
+Elimina un código de invitación.
+
+**Response:** `void` (204 No Content)
+
+---
+
+## Manejo de Errores
+
+El frontend maneja los siguientes códigos HTTP globalmente vía interceptors:
+
+| Código | Comportamiento                          |
+| :----: | --------------------------------------- |
+|  401   | Intentar refresh token → si falla, logout y redirect a `/` |
+|  403   | Redirect a `/dashboard` + toast de error |
+|  404   | Toast "Recurso no encontrado"            |
+|  429   | Mensaje de rate limit en panel de output |
+|  500   | Toast "Error del servidor"               |
+
+---
+
+## Servicios Correspondientes
+
+| Endpoint                    | Archivo del Servicio            |
+| --------------------------- | ------------------------------- |
+| `/auth/*`                   | `src/service/AuthService.ts`    |
+| `/subject/*`                | `src/service/SubjectService.ts` |
+| `/activity/*`               | `src/service/ActivityService.ts` |
+| `/execution/run`            | `src/service/EditorService.ts`  |
+| `/programming-language/*`   | `src/service/LanguageService.ts` |
+| `/invitation/*`             | `src/service/InvitationsService.ts` |

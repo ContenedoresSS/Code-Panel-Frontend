@@ -35,6 +35,7 @@ import { Button } from "@/components/ui/button";
 import { Plus, Loader2 } from "lucide-react";
 import { getSubjectById } from "@/service/SubjectService";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 
 export default function SubjectDetailView() {
   const { id } = useParams<{ id: string }>();
@@ -58,7 +59,7 @@ export default function SubjectDetailView() {
         setSubject(subjectData);
         setActivities(activitiesData);
       } catch (error) {
-        console.error("Error al cargar la información:", error);
+        logger.error("Error al cargar la información:", error);
         navigate("/dashboard")
       } finally {
         setIsLoading(false);
@@ -88,7 +89,6 @@ export default function SubjectDetailView() {
 
   // --- HANDLERS ---
   const handleEditActivity = (activityId: string) => {
-    console.log("Editar actividad:", activityId);
     navigate(`/subject/${id}/activity/${activityId}/edit`);
   };
 
@@ -102,7 +102,7 @@ export default function SubjectDetailView() {
 
       setActivities(prev => prev.filter(a => a.id !== activityId));
     } catch (error) {
-      console.error("Error al eliminar la actividad:", error);
+      logger.error("Error al eliminar la actividad:", error);
       toast.error("Hubo un error al eliminar la actividad.");
     }
   };

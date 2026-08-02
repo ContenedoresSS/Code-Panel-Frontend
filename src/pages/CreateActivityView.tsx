@@ -9,11 +9,6 @@ import {
   BreadcrumbSeparator 
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, ArrowLeft, Save } from "lucide-react";
 import { createActivity } from "@/service/ActivityService";
 import { getAllLanguages } from "@/service/LanguageService";
@@ -21,9 +16,11 @@ import type { CreateActivityRequest } from "@/types/request/CreateActivityReques
 import type { EditorLanguage } from "@/types/EditorProps";
 
 import EditorComponent from "@/components/EditorComponent";
+import { ActivityConfigCards } from "@/components/ActivityConfigCards";
 import type { SubjectResponse } from "@/types/response/SubjectResponse";
 import { getSubjectById } from "@/service/SubjectService";
 import { encodeToBase64 } from "@/utils/base64.util";
+import { logger } from "@/lib/logger";
 
 
 export default function CreateActivityView() {
@@ -68,7 +65,7 @@ useEffect(() => {
           setFormData(prev => ({ ...prev, languageId: mappedLangs[0].id }));
         }
       } catch (error) {
-        console.error("Error al cargar lenguajes:", error);
+        logger.error("Error al cargar lenguajes:", error);
       } finally {
         setIsLoadingLanguages(false);
       }
@@ -100,7 +97,7 @@ useEffect(() => {
       navigate(`/subject/${subjectId}`);
       
     } catch (error) {
-      console.error("Error al guardar la actividad:", error);
+      logger.error("Error al guardar la actividad:", error);
     } finally {
       setIsSaving(false);
     }
@@ -161,62 +158,18 @@ useEffect(() => {
         {/* COLUMNA IZQUIERDA: Panel de Configuraciones (Scrollable) */}
         <div className="w-[350px] xl:w-[400px] flex-none flex flex-col gap-6 overflow-y-auto pr-2 pb-4">
           
-          <Card className="dark:bg-zinc-900/50 dark:border-zinc-800 shadow-sm shrink-0">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg">Información General</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">Título <span className="text-destructive">*</span></Label>
-                <Input 
-                  id="title" 
-                  placeholder="Ej. Suma de Matrices"
-                  value={formData.title}
-                  onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="description">Instrucciones</Label>
-                <Textarea 
-                  id="description" 
-                  placeholder="Escribe el planteamiento del problema..."
-                  className="min-h-[140px] resize-y"
-                  value={formData.description}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="dark:bg-zinc-900/50 dark:border-zinc-800 shadow-sm shrink-0">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg">Restricciones</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-5">
-              <div className="flex items-center justify-between">
-                <Label className="text-sm font-medium cursor-pointer" htmlFor="allow-copy">Permitir Copiar</Label>
-                <Switch id="allow-copy" checked={formData.allowCopy} onCheckedChange={(val) => setFormData(prev => ({...prev, allowCopy: val}))} />
-              </div>
-              <div className="flex items-center justify-between">
-                <Label className="text-sm font-medium cursor-pointer" htmlFor="allow-paste">Permitir Pegar</Label>
-                <Switch id="allow-paste" checked={formData.allowPaste} onCheckedChange={(val) => setFormData(prev => ({...prev, allowPaste: val}))} />
-              </div>
-              <div className="space-y-2 pt-4 border-t border-border">
-                <Label htmlFor="maxAttempts">Intentos de Compilación Máximos</Label>
-                <div className="flex items-center gap-3">
-                  <Input 
-                    id="maxAttempts" 
-                    type="number" 
-                    min="0"
-                    className="w-24"
-                    value={formData.maxAttempts}
-                    onChange={(e) => setFormData(prev => ({ ...prev, maxAttempts: e.target.value }))}
-                  />
-                  <span className="text-xs text-muted-foreground">0 = Ilimitados</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <ActivityConfigCards
+            title={formData.title}
+            description={formData.description}
+            allowCopy={formData.allowCopy}
+            allowPaste={formData.allowPaste}
+            maxAttempts={formData.maxAttempts}
+            onTitleChange={(v) => setFormData(prev => ({ ...prev, title: v }))}
+            onDescriptionChange={(v) => setFormData(prev => ({ ...prev, description: v }))}
+            onAllowCopyChange={(v) => setFormData(prev => ({ ...prev, allowCopy: v }))}
+            onAllowPasteChange={(v) => setFormData(prev => ({ ...prev, allowPaste: v }))}
+            onMaxAttemptsChange={(v) => setFormData(prev => ({ ...prev, maxAttempts: v }))}
+          />
         </div>
 
         {/* COLUMNA DERECHA: El Editor (Ocupa todo el espacio restante) */}

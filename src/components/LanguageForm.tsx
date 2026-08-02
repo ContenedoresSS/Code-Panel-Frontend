@@ -9,6 +9,7 @@ import { Loader2,} from "lucide-react"
 import { Field, FieldGroup, FieldLabel, FieldSet } from "./ui/field"
 import { Input } from "./ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card"
+import { logger } from "@/lib/logger"
 
 const formSchema = z.object({
   name: z.string().min(1,"El nombre es obligatorio (ej. Java)"),
@@ -49,7 +50,7 @@ export default function LanguageForm (){
       } else {
         toast.error("Ocurrió un error al registrar el lenguaje.");
       }
-      console.error(error);
+      logger.error("Language form error:", error);
     } finally {
       setIsLoading(false);
     }

@@ -1,3 +1,5 @@
+import type { CodeFile } from "../CodeFile";
+
 export interface ActivityResponse {
   id: string;
   professorId: string;
@@ -5,7 +7,7 @@ export interface ActivityResponse {
   languageId: number;
   title: string;
   description: string | null;
-  starterCode: any | null;
+  starterCode: CodeFile[] | null;
   maxAttempts: number;
   allowCopy: boolean;
   allowPaste: boolean;
