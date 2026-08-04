@@ -2,19 +2,24 @@
 
 ## Resumen
 
-| Severidad | Cantidad |
-|-----------|----------|
-| Crítica    | 3        |
-| Alta       | 6        |
-| Media      | 12       |
-| Baja       | 8        |
-| **Total**  | **29**   |
+| Severidad | Pendientes | Resueltos |
+|-----------|:---------:|:---------:|
+| Crítica    | 0         | 3         |
+| Alta       | 3         | 3         |
+| Media      | 12        | 0         |
+| Baja       | 8         | 0         |
+| **Total**  | **23**    | **6**     |
 
 ---
 
 ## CRÍTICA
 
-### 1. Sin Error Boundaries
+### ~~1. Sin Error Boundaries~~ ✅ RESUELTO
+
+**Resolución:** Se creó `src/components/ErrorBoundary.tsx`. `DashboardLayout` y `EmbedEditor` están envueltos en `ErrorBoundary` en `App.tsx:30,39`.
+
+<details>
+<summary>Descripción original</summary>
 
 **Archivos afectados:** Todo el proyecto
 
@@ -28,9 +33,16 @@ No existe ningún `ErrorBoundary` de React en la aplicación. Cualquier error no
 
 **Recomendación:** Envolver al menos `DashboardLayout` y `EmbedEditor` en `ErrorBoundary` con recuperación graceful.
 
+</details>
+
 ---
 
-### 2. `starterCode: any | null` rompe type safety
+### ~~2. `starterCode: any | null` rompe type safety~~ ✅ RESUELTO
+
+**Resolución:** `src/types/response/ActivityResponse.ts:10` ahora tiene `starterCode: CodeFile[] | null;`.
+
+<details>
+<summary>Descripción original</summary>
 
 **Archivo:** `src/types/response/ActivityResponse.ts:8`
 
@@ -45,9 +57,16 @@ El tipo `any` en la respuesta de actividad se propaga por todo el flujo: carga (
 starterCode: CodeFile[] | null;
 ```
 
+</details>
+
 ---
 
-### 3. `api.get<any>` en ActivityService
+### ~~3. `api.get<any>` en ActivityService~~ ✅ RESUELTO
+
+**Resolución:** `src/service/ActivityService.ts:15,23` ahora usa `api.get<PaginatedResponse<ActivitySummaryResponse>>` y `api.get<ActivityResponse>`.
+
+<details>
+<summary>Descripción original</summary>
 
 **Archivo:** `src/service/ActivityService.ts:10`
 
@@ -61,6 +80,8 @@ El `any` como genérico anula completamente el type checking de TypeScript para 
 ```ts
 const response = await api.get<PaginatedResponse<ActivitySummaryResponse>>('/activity');
 ```
+
+</details>
 
 ---
 
@@ -88,7 +109,18 @@ El comentario en `EditActivityView.tsx:142` lo reconoce: _"El JSX es casi idént
 
 ---
 
-### 5. EditorComponent (265 líneas) — mezcla 5 responsabilidades
+### ~~5. EditorComponent (265 líneas) — mezcla 5 responsabilidades~~ ✅ RESUELTO
+
+**Resolución:** Extraídos subcomponentes en `src/components/editor/`:
+- `EditorToolbar.tsx`
+- `OutputPanel.tsx`
+- `InputPanel.tsx`
+- `TestCasesPanel.tsx`
+
+`EditorComponent.tsx` ahora importa y compone estos subcomponentes.
+
+<details>
+<summary>Descripción original</summary>
 
 **Archivo:** `src/components/EditorComponent.tsx`
 
@@ -108,9 +140,16 @@ Además contiene estado local para `darkMode` del editor que es independiente de
 - `InputPanel.tsx`
 - `TestCasesPanel.tsx`
 
+</details>
+
 ---
 
-### 6. 18 declaraciones console.log/error en producción
+### ~~6. 18 declaraciones console.log/error en producción~~ ✅ RESUELTO
+
+**Resolución:** Se creó `src/lib/logger.ts` — un logger centralizado condicionado a `import.meta.env.DEV`. Todos los `console.log/error` de los servicios y páginas fueron reemplazados por el logger. Solo queda un `console.error` en `ErrorBoundary.tsx:27` condicionado a DEV.
+
+<details>
+<summary>Descripción original</summary>
 
 **Archivos y líneas:**
 
@@ -139,6 +178,8 @@ Además contiene estado local para `darkMode` del editor que es independiente de
 
 **Recomendación:** Crear un logger centralizado condicionado a `import.meta.env.DEV` o eliminar todos y confiar en los toasts.
 
+</details>
+
 ---
 
 ### 7. URLs hardcodeadas en código fuente
@@ -153,7 +194,20 @@ Cambiar de entorno (local → staging → producción) requiere modificar códig
 
 ---
 
-### 8. Strings de roles y números mágicos
+### ~~8. Strings de roles y números mágicos~~ ✅ RESUELTO
+
+**Resolución:** Se creó `src/types/enum/UserRole.ts`:
+```ts
+export const UserRole = {
+  GOD: "God",
+  TEACHER: "Teacher",
+  STUDENT: "Student",
+} as const;
+```
+Se reemplazó en `App.tsx:23,48` y `SidebarMenuApp.tsx:17,90,101`. En `Access.tsx:19` persiste `TEACHER_ROLE_ID = 3` como constante local (aceptable).
+
+<details>
+<summary>Descripción original</summary>
 
 | Ubicación | Valor | Tipo |
 |-----------|-------|------|
@@ -170,6 +224,8 @@ export const UserRole = {
   STUDENT: 'Student',
 } as const;
 ```
+
+</details>
 
 ---
 
@@ -588,14 +644,14 @@ src/
 ## Prioridades de Refactorización Recomendadas
 
 ### Fase 1 (Seguridad y estabilidad)
-1. Agregar `ErrorBoundary` al menos en `DashboardLayout` y `EmbedEditor`
-2. Eliminar o condicionar los 18 `console.log/error`
+1. ~~Agregar `ErrorBoundary` al menos en `DashboardLayout` y `EmbedEditor`~~ ✅
+2. ~~Eliminar o condicionar los 18 `console.log/error`~~ ✅
 3. Sanitizar el output del editor antes de renderizar
 
 ### Fase 2 (Type safety)
-4. Corregir `starterCode: any | null` → `starterCode: CodeFile[] | null`
-5. Eliminar `api.get<any>` en ActivityService
-6. Crear `UserRole` enum y reemplazar strings/números mágicos
+4. ~~Corregir `starterCode: any | null` → `starterCode: CodeFile[] | null`~~ ✅
+5. ~~Eliminar `api.get<any>` en ActivityService~~ ✅
+6. ~~Crear `UserRole` enum y reemplazar strings/números mágicos~~ ✅
 
 ### Fase 3 (Eliminar duplicación)
 7. Extraer `ActivityFormLayout` y `useActivityForm` de Create/Edit

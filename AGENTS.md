@@ -242,3 +242,123 @@ Nginx config uses `try_files $uri $uri/ /index.html` for SPA routing support.
 - The **invitation system** (`/access`) generates one-time-use codes to register teachers. Only `God` role can access this.
 - **Theme support** is provided via `next-themes` (light/dark) with a `ModeToggle` component.
 - The API base URL comment in `src/lib/axios.ts` shows the local alternative for development — swap the comment when working locally.
+
+---
+
+## Backend API Consumption
+
+### API Reference
+
+The canonical, detailed endpoint reference is in `docs/API.md` — it contains full request/response schemas for every endpoint. Always consult it when creating or modifying services.
+
+The complete OpenAPI 3.1 spec (`openapi.yaml`) lives in the backend repo: https://github.com/ContenedoresSS/Code-Panel-Backend
+
+### Base URLs
+
+| Environment | URL                                              |
+| ----------- | ------------------------------------------------ |
+| Development | `http://localhost:3000/api/v1`                   |
+| Production  | `https://codepanel.orchfr.duckdns.org/api/v1`    |
+
+### Authentication (JWT)
+
+1. **POST `/auth/login`** — Send `{ identifier, password }`, receive `{ token, refreshToken }`.
+2. **POST `/auth/refreshSession`** — Send the refresh token as plain text body, receive a new `{ token, refreshToken }`.
+3. All authenticated requests include the header `Authorization: Bearer <token>`.
+
+Token lifetimes:
+- Access token: **4 hours**
+- Refresh token: **7 days**
+
+The Axios interceptor (`src/lib/interceptorsConfig.ts`) handles automatic token attachment and refresh on 401.
+
+### Base64 Encoding
+
+All code/content fields sent to and received from the backend use **Base64** encoding (UTF-8 safe via `TextEncoder`). This includes:
+- `code` and `stdin` in execution requests
+- `content` in `CodeFile[]` (starter code, activity files)
+- `input` and `expectedOutput` in test cases
+
+Helper functions are in `src/utils/base64.util.ts`:
+```ts
+encodeToBase64(str: string): string   // TextEncoder → Base64
+decodeFromBase64(b64: string): string // Base64 → TextDecoder
+```
+
+### Rate Limiting
+
+| Endpoints                                  | Limit                                |
+| ------------------------------------------ | ------------------------------------ |
+| `/execution/run`, `/execution/run-with-files` | 2 requests per 5 minutes per IP      |
+| `/activity/:id/submit`                     | 2 requests per 5 minutes per IP      |
+
+When rate-limited, the backend returns **HTTP 429**. The frontend shows a "wait 5 minutes" message in the output panel (`EditorComponent`).
+
+### ID Conventions
+
+| Resource            | ID Type |
+| ------------------- | :-----: |
+| Activity (`/activity/:id`) | UUID (string) |
+| User                | UUID (string) |
+| Subject             | integer |
+| Language             | integer |
+| Invitation           | integer |
+| TestCase             | integer |
+
+### Key Endpoints Summary
+
+| Method | Route                        | Auth     | Description                            |
+| ------ | ---------------------------- | :------: | -------------------------------------- |
+| POST   | `/auth/login`                | No       | Login                                  |
+| POST   | `/auth/register`             | No       | Registration                           |
+| POST   | `/auth/refreshSession`       | No       | Refresh token pair                     |
+| GET    | `/subject`                   | Yes      | List subjects (paginated)              |
+| GET    | `/subject/:id`               | Yes      | Get subject by ID                      |
+| POST   | `/subject`                   | Yes      | Create subject                         |
+| PUT    | `/subject/:id`               | Yes      | Update subject                         |
+| DELETE | `/subject/:id`               | Yes      | Delete subject                         |
+| GET    | `/activity`                  | Yes      | List all activities                    |
+| GET    | `/activity/:id`              | Yes      | Get activity (with starterCode)        |
+| POST   | `/activity`                  | Yes      | Create activity                        |
+| PUT    | `/activity/:id`              | Yes      | Update activity                        |
+| DELETE | `/activity/:id`              | Yes      | Delete activity                        |
+| GET    | `/activity/:id/workspace`    | No       | Public workspace for embedded editor   |
+| POST   | `/activity/:id/submit`       | Optional | Submit solution for evaluation         |
+| POST   | `/execution/run`             | No       | Execute code (rate-limited)            |
+| POST   | `/execution/run-with-files`  | No       | Execute multiple files (rate-limited)  |
+| GET    | `/programming-language`      | Yes      | List languages (God only)              |
+| POST   | `/programming-language`      | Yes      | Create language (God only)             |
+| DELETE | `/programming-language/:id`  | Yes      | Delete language (God only)             |
+| GET    | `/invitation`                | Yes      | List invitations, paginated (God only) |
+| POST   | `/invitation`                | Yes      | Create invitation code (God only)      |
+| PUT    | `/invitation/:id`            | Yes      | Update invitation (God only)           |
+| DELETE | `/invitation/:id`            | Yes      | Delete invitation (God only)           |
+
+### Error Response Format
+
+All backend errors follow this structure:
+```json
+{ "error": "Descriptive error message" }
+```
+
+HTTP codes and their handling (via Axios interceptors):
+
+| Code | Behavior                                           |
+| :--: | -------------------------------------------------- |
+| 400  | Invalid parameters — surfaced per-request          |
+| 401  | Token invalid/expired → refresh attempt → logout   |
+| 403  | Insufficient permissions → redirect to `/dashboard` + toast |
+| 404  | Resource not found → toast                         |
+| 429  | Rate limit → "wait 5 minutes" message              |
+| 500  | Server error → toast                               |
+
+### Service File Mapping
+
+| Endpoint                  | Service File                     |
+| ------------------------- | -------------------------------- |
+| `/auth/*`                 | `src/service/AuthService.ts`     |
+| `/subject/*`              | `src/service/SubjectService.ts`  |
+| `/activity/*`             | `src/service/ActivityService.ts` |
+| `/execution/run`          | `src/service/EditorService.ts`   |
+| `/programming-language/*` | `src/service/LanguageService.ts` |
+| `/invitation/*`           | `src/service/InvitationsService.ts` |
