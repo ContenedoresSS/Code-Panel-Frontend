@@ -2,6 +2,7 @@ import type { AxiosInstance } from "axios";
 import { TokenService } from "@/service/TokenService";
 import { refreshAccesToken } from "@/service/AuthService";
 import { toast } from "sonner";
+import { logger } from "./logger";
 
 export const interceptorsConfig = (api: AxiosInstance) => {
   //token headers
@@ -38,7 +39,7 @@ export const interceptorsConfig = (api: AxiosInstance) => {
           originalRequest.headers.Authorization = `Bearer ${token}`;
           return api(originalRequest);
         } catch (error) {
-          console.error("Token refresh failed:", error);
+          logger.error("Token refresh failed:", error);
           TokenService.removeTokens();
           window.location.href = "/";
           toast.error("Error 401: Credenciales invalidas o Session Expirada", {

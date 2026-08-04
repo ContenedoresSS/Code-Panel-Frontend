@@ -1,11 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Card, CardContent, CardTitle, CardHeader } from "@/components/ui/card";
 import { Loader2, ArrowLeft, Save } from "lucide-react";
 
 import { getActivitiesById, updateActivity } from "@/service/ActivityService";
@@ -17,6 +12,8 @@ import type { SubjectResponse } from "@/types/response/SubjectResponse";
 import { getSubjectById } from "@/service/SubjectService";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { encodeToBase64, decodeFromBase64 } from "@/utils/base64.util";
+import { logger } from "@/lib/logger";
+import { ActivityConfigCards } from "@/components/ActivityConfigCards";
 
 
 
@@ -66,21 +63,12 @@ export default function EditActivityView() {
         setSubject(subjectData);
 
         // Extraemos el código inicial si existe (es un array en la BD)
-      let initialCodeStr = "";
-        if (activityData.starterCode) {
+        let initialCodeStr = "";
+        if (activityData.starterCode && activityData.starterCode.length > 0) {
           try {
-            // Si llega como texto, lo convertimos a Objeto. Si ya es objeto, lo dejamos igual.
-            const parsedCode = typeof activityData.starterCode === "string" 
-              ? JSON.parse(activityData.starterCode) 
-              : activityData.starterCode;
-
-            // Verificamos que sea un arreglo y tenga contenido
-            if (Array.isArray(parsedCode) && parsedCode.length > 0) {
-              const rawContent = parsedCode[0].content || "";
-              initialCodeStr = decodeFromBase64(rawContent);
-            }
+            initialCodeStr = decodeFromBase64(activityData.starterCode[0].content);
           } catch (e) {
-            console.error("No se pudo extraer el starterCode:", e);
+            logger.error("No se pudo extraer el starterCode:", e);
           }
         }
 
@@ -96,7 +84,7 @@ export default function EditActivityView() {
         });
 
       } catch (error) {
-        console.error("Error al cargar la actividad:", error);
+        logger.error("Error al cargar la actividad:", error);
         navigate(`/subject/${subjectId}`);
       } finally {
         setIsLoading(false);
@@ -129,7 +117,7 @@ export default function EditActivityView() {
       navigate(`/subject/${subjectId}`);
       
     } catch (error) {
-      console.error("Error al actualizar la actividad:", error);
+      logger.error("Error al actualizar la actividad:", error);
     } finally {
       setIsSaving(false);
     }
@@ -178,33 +166,18 @@ export default function EditActivityView() {
 
       <div className="flex flex-1 min-h-0 overflow-hidden p-6 gap-6 pt-6">
         <div className="w-[350px] flex-none flex flex-col gap-6 overflow-y-auto pr-2 pb-4">
-          {/* Tarjeta Información */}
-          <Card className="dark:bg-zinc-900/50 dark:border-zinc-800 shrink-0">
-            <CardHeader className="pb-4"><CardTitle className="text-lg">Información General</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Título</Label>
-                <Input value={formData.title} onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))} />
-              </div>
-              <div className="space-y-2">
-                <Label>Instrucciones</Label>
-                <Textarea className="min-h-[140px]" value={formData.description} onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))} />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Tarjeta Restricciones */}
-          <Card className="dark:bg-zinc-900/50 dark:border-zinc-800 shrink-0">
-             <CardHeader className="pb-4"><CardTitle className="text-lg">Restricciones</CardTitle></CardHeader>
-             <CardContent className="space-y-5">
-               <div className="flex justify-between"><Label>Permitir Copiar</Label><Switch checked={formData.allowCopy} onCheckedChange={(v) => setFormData(p => ({...p, allowCopy: v}))} /></div>
-               <div className="flex justify-between"><Label>Permitir Pegar</Label><Switch checked={formData.allowPaste} onCheckedChange={(v) => setFormData(p => ({...p, allowPaste: v}))} /></div>
-               <div className="space-y-2 pt-4 border-t border-border">
-                  <Label>Intentos Máximos</Label>
-                  <Input type="number" min="0" value={formData.maxAttempts} onChange={(e) => setFormData(p => ({ ...p, maxAttempts: e.target.value }))} />
-               </div>
-             </CardContent>
-          </Card>
+          <ActivityConfigCards
+            title={formData.title}
+            description={formData.description}
+            allowCopy={formData.allowCopy}
+            allowPaste={formData.allowPaste}
+            maxAttempts={formData.maxAttempts}
+            onTitleChange={(v) => setFormData(prev => ({ ...prev, title: v }))}
+            onDescriptionChange={(v) => setFormData(prev => ({ ...prev, description: v }))}
+            onAllowCopyChange={(v) => setFormData(prev => ({ ...prev, allowCopy: v }))}
+            onAllowPasteChange={(v) => setFormData(prev => ({ ...prev, allowPaste: v }))}
+            onMaxAttemptsChange={(v) => setFormData(prev => ({ ...prev, maxAttempts: v }))}
+          />
         </div>
 
         <div className="flex-1 border rounded-xl overflow-hidden bg-background shadow-sm flex flex-col">

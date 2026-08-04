@@ -4,16 +4,19 @@ import type { UpdateActivityRequest } from "@/types/request/UpdateActivityReques
 import type { ActivityResponse } from "@/types/response/ActivityResponse";
 import type { ActivitySummaryResponse } from "@/types/response/ActivitySummaryResponse";
 
+interface PaginatedResponse<T> {
+  data: T[];
+  totalCount: number;
+}
+
 export const getActivitiesBySubject = async (
   subjectId: string | number
 ): Promise<ActivitySummaryResponse[]> => {
-  const response = await api.get<any>(`/activity`);
-  const allActivities: ActivitySummaryResponse[] = response.data.data || response.data;
-  const filteredActivities = allActivities.filter(
+  const response = await api.get<PaginatedResponse<ActivitySummaryResponse>>("/activity");
+  const allActivities = response.data.data;
+  return allActivities.filter(
     (activity) => activity.subjectId === Number(subjectId)
   );
-
-  return filteredActivities;
 };
 
 export const getActivitiesById = async (id: string): Promise<ActivityResponse> => {

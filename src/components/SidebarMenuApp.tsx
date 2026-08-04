@@ -14,6 +14,7 @@ import {
 
 import { LayoutDashboard , User2, Code, Settings, Layers, KeyRound, LogOut, SquareChartGantt } from "lucide-react";
 import { Link, useNavigate } from "react-router";
+import { UserRole } from "@/types/enum/UserRole";
 
 
 export function SidebarMenuApp () {
@@ -86,8 +87,8 @@ return(
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  {user?.role === 'God' && (
-                  
+                  {user?.role === UserRole.GOD && (
+                   
                   <Link to={"/access"}>
                   <KeyRound />
                   <span>Accesos</span>
@@ -97,7 +98,7 @@ return(
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  {user?.role === 'God' && (
+                  {user?.role === UserRole.GOD && (
                   <Link to={"/language"}>
                   <SquareChartGantt />
                   <span>Lenguaje</span>

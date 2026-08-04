@@ -15,17 +15,19 @@ import { RoleGuard } from './guards/RoleGuard';
 import { ProtectedRoute } from './guards/ProtectedRoute';
 import Language from './pages/Language';
 import EmbedEditor from './pages/EmbedEditor';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import SubjectDetailView from './pages/SubjectDetailView';
 import CreateActivityView from './pages/CreateActivityView';
 import EditActivityView from './pages/EditActivityView';
 import Subject from './pages/Subject';
+import { UserRole } from './types/enum/UserRole';
 
 function App() {
   
   return (
   <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
       <Routes>
-        <Route path="/embed/editor" element={<EmbedEditor />} />
+        <Route path="/embed/editor" element={<ErrorBoundary><EmbedEditor /></ErrorBoundary>} />
         <Route path="/">
           <Route index element={<Navigate to="/login" replace />} />
           <Route path="login" element={<Login />} />
@@ -34,7 +36,7 @@ function App() {
         </Route>
         
         <Route element={<ProtectedRoute />}>
-          <Route element={<DashboardLayout />}>
+          <Route element={<ErrorBoundary><DashboardLayout /></ErrorBoundary>}>
             <Route path="dashboard" element={<Dashboard/>} />
             <Route path="setting" element={<Setting />} />
             <Route path="student" element={<Student/>} />
@@ -43,7 +45,7 @@ function App() {
               <Route path="/subject/:id/activity/new" element={<CreateActivityView />} />
               <Route path="/subject/:id/activity/:activityId/edit" element={<EditActivityView />} />
 
-            <Route element={<RoleGuard allowedRole="God" />}>
+            <Route element={<RoleGuard allowedRole={UserRole.GOD} />}>
               <Route path="access" element={<Access />} />
               <Route path="language" element={<Language/>} />
             </Route>

@@ -16,7 +16,7 @@ export default function Access () {
   const [invitations, setInvitations] = useState<InvitationDTO[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const PROFESOR_ROLE = 3;
+  const TEACHER_ROLE_ID = 3;
 
   useEffect(()=>{
     fetchInvitations();
@@ -38,7 +38,7 @@ export default function Access () {
 const handleGenerateCode = async () => {
   setIsGenerating(true);
   try {
-    const newInvitation = await createInvitation({roleId:PROFESOR_ROLE});
+    const newInvitation = await createInvitation({roleId: TEACHER_ROLE_ID});
     setInvitations([newInvitation,...invitations]);
     setGeneratedCode(newInvitation.code);
     setIsCopied(false);

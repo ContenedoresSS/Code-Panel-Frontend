@@ -40,7 +40,6 @@ export default function Subject() {
 
 
   const handleEnterSubject = (id: number | string) => {
-    console.log(`Accediendo al curso: ${id}`);
     navigate(`/subject/${id}`);
   };
 
