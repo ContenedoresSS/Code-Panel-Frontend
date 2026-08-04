@@ -107,6 +107,10 @@ export default function SubjectDetailView() {
     }
   };
 
+  const handleDuplicateActivity = (activityId: string) => {
+    navigate(`/subject/${id}/activity/new?duplicate=${activityId}`);
+  };
+
 
   // --- RENDER ---
   if (isLoading) {
@@ -175,6 +179,7 @@ export default function SubjectDetailView() {
                     activity={activity} 
                     onEdit={handleEditActivity}
                     onDelete={handleDeleteActivity}
+                    onDuplicate={handleDuplicateActivity}
                   />
                 ))}
               </div>

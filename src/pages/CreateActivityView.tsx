@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router";
+import { useParams, useNavigate, useSearchParams } from "react-router";
 import { 
   Breadcrumb, 
   BreadcrumbItem, 
@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Loader2, ArrowLeft, Save } from "lucide-react";
-import { createActivity } from "@/service/ActivityService";
+import { createActivity, getActivitiesById } from "@/service/ActivityService";
 import { getAllLanguages } from "@/service/LanguageService";
 import type { CreateActivityRequest } from "@/types/request/CreateActivityRequest";
 import type { EditorLanguage } from "@/types/EditorProps";
@@ -19,13 +19,15 @@ import EditorComponent from "@/components/EditorComponent";
 import { ActivityConfigCards } from "@/components/ActivityConfigCards";
 import type { SubjectResponse } from "@/types/response/SubjectResponse";
 import { getSubjectById } from "@/service/SubjectService";
-import { encodeToBase64 } from "@/utils/base64.util";
+import { encodeToBase64, decodeFromBase64 } from "@/utils/base64.util";
 import { logger } from "@/lib/logger";
 
 
 export default function CreateActivityView() {
   const { id: subjectId } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const duplicateId = searchParams.get("duplicate");
 
   //const [languages, setLanguages] = useState<LanguageResponse[]>([]);
   const [editorLanguages, setEditorLanguages] = useState<EditorLanguage[]>([]);
@@ -45,10 +47,9 @@ export default function CreateActivityView() {
   });
 
 useEffect(() => {
-    const fetchLanguages = async () => {
+    const fetchInitialData = async () => {
       try {
         const data = await getAllLanguages();
-        //setLanguages(data);
         
         const subjectNameId = Number(subjectId)
         const subjectData = await getSubjectById(subjectNameId);
@@ -60,18 +61,37 @@ useEffect(() => {
         }));
         
         setEditorLanguages(mappedLangs);
-        
-        if (mappedLangs.length > 0) {
+
+        if (duplicateId) {
+          const originalActivity = await getActivitiesById(duplicateId);
+          let starterCodeStr = "";
+          if (originalActivity.starterCode && originalActivity.starterCode.length > 0) {
+            try {
+              starterCodeStr = decodeFromBase64(originalActivity.starterCode[0].content);
+            } catch (e) {
+              logger.error("Error decodificando starterCode:", e);
+            }
+          }
+          setFormData({
+            title: `Copia de ${originalActivity.title}`,
+            description: originalActivity.description || "",
+            languageId: originalActivity.languageId,
+            maxAttempts: originalActivity.maxAttempts.toString(),
+            allowCopy: originalActivity.allowCopy,
+            allowPaste: originalActivity.allowPaste,
+            starterCode: starterCodeStr,
+          });
+        } else if (mappedLangs.length > 0) {
           setFormData(prev => ({ ...prev, languageId: mappedLangs[0].id }));
         }
       } catch (error) {
-        logger.error("Error al cargar lenguajes:", error);
+        logger.error("Error al cargar datos:", error);
       } finally {
         setIsLoadingLanguages(false);
       }
     };
-    fetchLanguages();
-  }, []);
+    fetchInitialData();
+  }, [subjectId, duplicateId]);
 
   const handleSave = async () => {
     if (!formData.title || !subjectId) return;
@@ -120,7 +140,7 @@ useEffect(() => {
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
-              <BreadcrumbPage>Crear Actividad</BreadcrumbPage>
+              <BreadcrumbPage>{duplicateId ? "Duplicar Actividad" : "Crear Actividad"}</BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
@@ -131,8 +151,15 @@ useEffect(() => {
               <ArrowLeft className="w-4 h-4" />
             </Button>
             <div>
-              <h1 className="text-2xl font-bold text-foreground tracking-tight">Nueva Actividad</h1>
-              <p className="text-muted-foreground text-sm">Configura los detalles y el código inicial para el alumno.</p>
+              <h1 className="text-2xl font-bold text-foreground tracking-tight">
+                {duplicateId ? "Duplicar Actividad" : "Nueva Actividad"}
+              </h1>
+              <p className="text-muted-foreground text-sm">
+                {duplicateId 
+                  ? "Modifica los detalles de la copia antes de guardarla." 
+                  : "Configura los detalles y el código inicial para el alumno."
+                }
+              </p>
             </div>
           </div>
           <div className="flex gap-3 w-full sm:w-auto">
@@ -182,6 +209,7 @@ useEffect(() => {
           ) : (
             <EditorComponent 
               languages={editorLanguages}
+              initialCode={{ id: "1", nameFile: "main", code: formData.starterCode, languageId: formData.languageId }}
               onChangeCode={(code) => setFormData(prev => ({ ...prev, starterCode: code }))}
               onChangeLanguage={(id) => setFormData(prev => ({ ...prev, languageId: id }))}
             />

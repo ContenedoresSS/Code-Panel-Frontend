@@ -15,9 +15,11 @@ interface EditorPropsInfo {
   initialCode?: EditorCodeFile;
   onChangeCode?: (code: string) => void;
   onChangeLanguage?: (languageId: number) => void;
+  disableCopy?: boolean;
+  disablePaste?: boolean;
 }
 
-export default function EditorComponent({ languages, initialCode, onChangeCode, onChangeLanguage }: EditorPropsInfo) {
+export default function EditorComponent({ languages, initialCode, onChangeCode, onChangeLanguage, disableCopy, disablePaste }: EditorPropsInfo) {
   const [language, setLanguage] = useState<number>(initialCode?.languageId ?? languages[0]?.id ?? 1);
   const [code, setCode] = useState<string>(initialCode?.code || "");
   const [darkMode, setDarkMode] = useState(false);
@@ -128,6 +130,8 @@ export default function EditorComponent({ languages, initialCode, onChangeCode, 
             onChange={handleCodeChange}
             darkMode={darkMode}
             fontSize={fontSize}
+            disableCopy={disableCopy}
+            disablePaste={disablePaste}
           />
           <OutputPanel
             output={output}
