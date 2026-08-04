@@ -3,6 +3,7 @@ import type { CreateActivityRequest } from "@/types/request/CreateActivityReques
 import type { UpdateActivityRequest } from "@/types/request/UpdateActivityRequest";
 import type { ActivityResponse } from "@/types/response/ActivityResponse";
 import type { ActivitySummaryResponse } from "@/types/response/ActivitySummaryResponse";
+import type { WorkspaceResponse } from "@/types/response/WorkspaceResponse";
 
 interface PaginatedResponse<T> {
   data: T[];
@@ -41,4 +42,9 @@ export const updateActivity = async (
 
 export const deleteActivity = async (id: string): Promise<void> => {
   await api.delete(`/activity/${id}`);
+};
+
+export const getWorkspace = async (id: string): Promise<WorkspaceResponse> => {
+  const response = await api.get<WorkspaceResponse>(`/activity/${id}/workspace`);
+  return response.data;
 };

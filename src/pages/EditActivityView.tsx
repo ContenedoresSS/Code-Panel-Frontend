@@ -103,6 +103,7 @@ export default function EditActivityView() {
       const payload: UpdateActivityRequest = {
         title: formData.title,
         description: formData.description,
+        languageId: formData.languageId,
         maxAttempts: Number(formData.maxAttempts) || 0,
         allowCopy: formData.allowCopy,
         allowPaste: formData.allowPaste,

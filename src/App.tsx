@@ -15,6 +15,7 @@ import { RoleGuard } from './guards/RoleGuard';
 import { ProtectedRoute } from './guards/ProtectedRoute';
 import Language from './pages/Language';
 import EmbedEditor from './pages/EmbedEditor';
+import EmbedActivity from './pages/EmbedActivity';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import SubjectDetailView from './pages/SubjectDetailView';
 import CreateActivityView from './pages/CreateActivityView';
@@ -28,6 +29,7 @@ function App() {
   <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
       <Routes>
         <Route path="/embed/editor" element={<ErrorBoundary><EmbedEditor /></ErrorBoundary>} />
+        <Route path="/embed/activity/:activityId" element={<ErrorBoundary><EmbedActivity /></ErrorBoundary>} />
         <Route path="/">
           <Route index element={<Navigate to="/login" replace />} />
           <Route path="login" element={<Login />} />

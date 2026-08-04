@@ -15,9 +15,10 @@ interface SortableActivityItemProps {
   activity: ActivitySummaryResponse;
   onEdit?: (id: string) => void;
   onDelete?: (id: string) => void;
+  onDuplicate?: (id: string) => void;
 }
 
-export function SortableActivityItem({ activity, onEdit, onDelete }: SortableActivityItemProps) {
+export function SortableActivityItem({ activity, onEdit, onDelete, onDuplicate }: SortableActivityItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: activity.id });
   const [isCopied, setIsCopied] = useState(false);
 
@@ -36,7 +37,7 @@ export function SortableActivityItem({ activity, onEdit, onDelete }: SortableAct
   const handleCopyIframe = () => {
     // Aquí construirás la URL real de tu Iframe más adelante
     // Por ahora usamos una estructura de ejemplo basándonos en tu dominio
-    const iframeCode = `<iframe src="https://codepanel.orchfr.duckdns.org/embed/activity/${activity.id}" width="100%" height="600px" style="border:none; border-radius:8px;"></iframe>`;
+    const iframeCode = `<iframe src="${window.location.origin}/embed/activity/${activity.id}" width="100%" height="600px" style="border:none; border-radius:8px;"></iframe>`;
     
     navigator.clipboard.writeText(iframeCode).then(() => {
       setIsCopied(true);
@@ -116,7 +117,7 @@ export function SortableActivityItem({ activity, onEdit, onDelete }: SortableAct
           <DropdownMenuItem onClick={() => onEdit?.(activity.id)}>
             Editar actividad
           </DropdownMenuItem>
-          <DropdownMenuItem>Duplicar actividad</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onDuplicate?.(activity.id)}>Duplicar actividad</DropdownMenuItem>
           <DropdownMenuItem 
             className="text-destructive focus:text-destructive"
             onClick={() => onDelete?.(activity.id)}
