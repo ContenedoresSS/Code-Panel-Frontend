@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router";
 import { Loader2 } from "lucide-react";
 import EditorComponent from "@/components/EditorComponent";
 import { EmbedLoginForm } from "@/components/EmbedLoginForm";
 import { useAuth } from "@/assets/context/AuthContext";
 import { getWorkspace } from "@/service/ActivityService";
+import { getAllLanguages } from "@/service/LanguageService";
 import { decodeFromBase64 } from "@/utils/base64.util";
 import type { EditorCodeFile, EditorLanguage } from "@/types/EditorProps";
 import type { WorkspaceResponse } from "@/types/response/WorkspaceResponse";
@@ -17,6 +18,7 @@ export default function EmbedActivity() {
   const [workspace, setWorkspace] = useState<WorkspaceResponse | null>(null);
   const [isLoadingWorkspace, setIsLoadingWorkspace] = useState(false);
   const [workspaceError, setWorkspaceError] = useState<string | null>(null);
+  const [allLanguages, setAllLanguages] = useState<EditorLanguage[]>([]);
 
   useEffect(() => {
     if (!isAuthenticated || !activityId) return;
@@ -24,8 +26,20 @@ export default function EmbedActivity() {
     setIsLoadingWorkspace(true);
     setWorkspaceError(null);
 
-    getWorkspace(activityId)
-      .then((data) => setWorkspace(data))
+    Promise.all([
+      getWorkspace(activityId),
+      getAllLanguages(),
+    ])
+      .then(([workspaceData, languagesData]) => {
+        setWorkspace(workspaceData);
+        const mappedLangs: EditorLanguage[] = languagesData.map((lang) => ({
+          id: lang.id,
+          monacoId: lang.editorIdentifier,
+          name: `${lang.name} (${lang.version})`,
+          fileExtension: lang.fileExtension,
+        }));
+        setAllLanguages(mappedLangs);
+      })
       .catch((err) => {
         logger.error("Error al cargar workspace:", err);
         setWorkspaceError(
@@ -74,26 +88,29 @@ export default function EmbedActivity() {
     );
   }
 
-  const editorLanguage: EditorLanguage = {
+  const editorLanguage: EditorLanguage = useMemo(() => ({
     id: workspace.language.id,
     monacoId: workspace.language.editorIdentifier,
     name: workspace.language.name,
-  };
+    fileExtension: workspace.language.fileExtension,
+  }), [workspace.language.id, workspace.language.editorIdentifier, workspace.language.name, workspace.language.fileExtension]);
 
-  let initialCode: EditorCodeFile | undefined;
-  if (workspace.starterCode && workspace.starterCode.length > 0) {
-    try {
-      const decodedContent = decodeFromBase64(workspace.starterCode[0].content);
-      initialCode = {
-        id: "1",
-        nameFile: workspace.starterCode[0].name,
-        code: decodedContent,
-        languageId: workspace.language.id,
-      };
-    } catch (e) {
-      logger.error("Error decodificando starterCode:", e);
+  const initialCode: EditorCodeFile | undefined = useMemo(() => {
+    if (workspace.starterCode && workspace.starterCode.length > 0) {
+      try {
+        const decodedContent = decodeFromBase64(workspace.starterCode[0].content);
+        return {
+          id: "1",
+          nameFile: workspace.starterCode[0].name,
+          code: decodedContent,
+          languageId: workspace.language.id,
+        };
+      } catch (e) {
+        logger.error("Error decodificando starterCode:", e);
+      }
     }
-  }
+    return undefined;
+  }, [workspace?.starterCode, workspace?.language?.id]);
 
   return (
     <div className="flex flex-col h-full w-full bg-background">
@@ -108,10 +125,14 @@ export default function EmbedActivity() {
 
       <div className="flex-1 min-h-0">
         <EditorComponent
-          languages={[editorLanguage]}
+          languages={workspace.allowLanguageChange ? allLanguages : [editorLanguage]}
           initialCode={initialCode}
           disableCopy={!workspace.allowCopy}
           disablePaste={!workspace.allowPaste}
+          disableEdit={!workspace.allowEdit}
+          disableLanguageChange={!workspace.allowLanguageChange}
+          disableUpload={!workspace.allowUpload}
+          disableDownload={!workspace.allowDownload}
         />
       </div>
     </div>

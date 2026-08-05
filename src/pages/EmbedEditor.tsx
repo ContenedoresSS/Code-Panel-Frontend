@@ -3,9 +3,9 @@ import EditorComponent from '../components/EditorComponent';
 export default function EmbedEditor() {
 
   const lenguajesSoportados = [
-    { id: 1, name: "JavaScript", monacoId: "javascript" },
-    { id: 2, name: "Python", monacoId: "python" },
-    { id: 3, name: "TypeScript", monacoId: "typescript" },
+    { id: 1, name: "JavaScript", monacoId: "javascript", fileExtension: "js" },
+    { id: 2, name: "Python", monacoId: "python", fileExtension: "py" },
+    { id: 3, name: "TypeScript", monacoId: "typescript", fileExtension: "ts" },
   ];
 
   return (

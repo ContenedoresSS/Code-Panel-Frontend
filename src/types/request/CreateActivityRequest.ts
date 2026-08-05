@@ -9,4 +9,8 @@ export interface CreateActivityRequest {
   maxAttempts?: number;
   allowCopy?: boolean;
   allowPaste?: boolean;
+  allowEdit?: boolean;
+  allowLanguageChange?: boolean;
+  allowUpload?: boolean;
+  allowDownload?: boolean;
 }

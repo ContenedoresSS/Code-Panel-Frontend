@@ -34,6 +34,10 @@ export default function EditActivityView() {
     maxAttempts: "0",
     allowCopy: true,
     allowPaste: true,
+    allowEdit: true,
+    allowLanguageChange: true,
+    allowUpload: true,
+    allowDownload: true,
     starterCode: "", 
   });
 
@@ -57,7 +61,8 @@ export default function EditActivityView() {
         const mappedLangs = langsData.map(lang => ({
           id: lang.id,
           name: `${lang.name} (${lang.version})`,
-          monacoId: lang.editorIdentifier
+          monacoId: lang.editorIdentifier,
+          fileExtension: lang.fileExtension,
         }));
         setEditorLanguages(mappedLangs);
         setSubject(subjectData);
@@ -80,6 +85,10 @@ export default function EditActivityView() {
           maxAttempts: activityData.maxAttempts.toString(),
           allowCopy: activityData.allowCopy,
           allowPaste: activityData.allowPaste,
+          allowEdit: activityData.allowEdit,
+          allowLanguageChange: activityData.allowLanguageChange,
+          allowUpload: activityData.allowUpload,
+          allowDownload: activityData.allowDownload,
           starterCode: initialCodeStr,
         });
 
@@ -107,6 +116,10 @@ export default function EditActivityView() {
         maxAttempts: Number(formData.maxAttempts) || 0,
         allowCopy: formData.allowCopy,
         allowPaste: formData.allowPaste,
+        allowEdit: formData.allowEdit,
+        allowLanguageChange: formData.allowLanguageChange,
+        allowUpload: formData.allowUpload,
+        allowDownload: formData.allowDownload,
         starterCode: formData.starterCode ? [{
           name: "main",
           content: encodeToBase64(formData.starterCode)
@@ -172,11 +185,19 @@ export default function EditActivityView() {
             description={formData.description}
             allowCopy={formData.allowCopy}
             allowPaste={formData.allowPaste}
+            allowEdit={formData.allowEdit}
+            allowLanguageChange={formData.allowLanguageChange}
+            allowUpload={formData.allowUpload}
+            allowDownload={formData.allowDownload}
             maxAttempts={formData.maxAttempts}
             onTitleChange={(v) => setFormData(prev => ({ ...prev, title: v }))}
             onDescriptionChange={(v) => setFormData(prev => ({ ...prev, description: v }))}
             onAllowCopyChange={(v) => setFormData(prev => ({ ...prev, allowCopy: v }))}
             onAllowPasteChange={(v) => setFormData(prev => ({ ...prev, allowPaste: v }))}
+            onAllowEditChange={(v) => setFormData(prev => ({ ...prev, allowEdit: v }))}
+            onAllowLanguageChangeChange={(v) => setFormData(prev => ({ ...prev, allowLanguageChange: v }))}
+            onAllowUploadChange={(v) => setFormData(prev => ({ ...prev, allowUpload: v }))}
+            onAllowDownloadChange={(v) => setFormData(prev => ({ ...prev, allowDownload: v }))}
             onMaxAttemptsChange={(v) => setFormData(prev => ({ ...prev, maxAttempts: v }))}
           />
         </div>

@@ -8,6 +8,7 @@ interface EditorPaneProps {
   fontSize: number;
   disableCopy?: boolean;
   disablePaste?: boolean;
+  disableEdit?: boolean;
 }
 
 export function EditorPane({
@@ -18,6 +19,7 @@ export function EditorPane({
   fontSize,
   disableCopy,
   disablePaste,
+  disableEdit,
 }: EditorPaneProps) {
   function handleEditorDidMount(_editor: unknown, monaco: unknown) {
     const editor = _editor as Record<string, unknown>;
@@ -50,6 +52,7 @@ export function EditorPane({
           padding: { top: 16 },
           scrollBeyondLastLine: false,
           automaticLayout: true,
+          readOnly: disableEdit,
           contextmenu: !(disableCopy && disablePaste),
         }}
       />

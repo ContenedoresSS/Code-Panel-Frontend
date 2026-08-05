@@ -17,9 +17,13 @@ interface EditorPropsInfo {
   onChangeLanguage?: (languageId: number) => void;
   disableCopy?: boolean;
   disablePaste?: boolean;
+  disableEdit?: boolean;
+  disableLanguageChange?: boolean;
+  disableUpload?: boolean;
+  disableDownload?: boolean;
 }
 
-export default function EditorComponent({ languages, initialCode, onChangeCode, onChangeLanguage, disableCopy, disablePaste }: EditorPropsInfo) {
+export default function EditorComponent({ languages, initialCode, onChangeCode, onChangeLanguage, disableCopy, disablePaste, disableEdit, disableLanguageChange, disableUpload, disableDownload }: EditorPropsInfo) {
   const [language, setLanguage] = useState<number>(initialCode?.languageId ?? languages[0]?.id ?? 1);
   const [code, setCode] = useState<string>(initialCode?.code || "");
   const [darkMode, setDarkMode] = useState(false);
@@ -28,6 +32,7 @@ export default function EditorComponent({ languages, initialCode, onChangeCode, 
   const [output, setOutput] = useState<string>("Esperando ejecución...");
   const [isExecuting, setIsExecuting] = useState(false);
   const currentLanguage = languages.find(l => l.id === language)?.monacoId || "plaintext";
+  const currentLanguageExtension = languages.find(l => l.id === language)?.fileExtension || "txt";
 
   useEffect(() => {
     if (initialCode) {
@@ -110,6 +115,11 @@ export default function EditorComponent({ languages, initialCode, onChangeCode, 
     if (onChangeCode) onChangeCode(val);
   };
 
+  const handleFileUpload = (content: string) => {
+    setCode(content);
+    if (onChangeCode) onChangeCode(content);
+  };
+
   return (
     <div className={`flex flex-col h-full w-full border border-border rounded-md overflow-hidden bg-background text-foreground transition-colors duration-300 ${darkMode ? 'dark' : 'light'}`}>
       <EditorToolbar
@@ -120,6 +130,12 @@ export default function EditorComponent({ languages, initialCode, onChangeCode, 
         languages={languages}
         currentLanguage={language}
         onLanguageChange={handleLanguageSelector}
+        disableLanguageChange={disableLanguageChange}
+        disableUpload={disableUpload}
+        disableDownload={disableDownload}
+        onFileUpload={handleFileUpload}
+        getCodeForDownload={() => code}
+        currentLanguageExtension={currentLanguageExtension}
       />
 
       <div className="flex flex-col flex-1 overflow-hidden">
@@ -132,6 +148,7 @@ export default function EditorComponent({ languages, initialCode, onChangeCode, 
             fontSize={fontSize}
             disableCopy={disableCopy}
             disablePaste={disablePaste}
+            disableEdit={disableEdit}
           />
           <OutputPanel
             output={output}
