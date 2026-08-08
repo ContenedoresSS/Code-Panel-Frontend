@@ -1,8 +1,10 @@
 import api from "@/lib/axios";
 import type { CreateActivityRequest } from "@/types/request/CreateActivityRequest";
 import type { UpdateActivityRequest } from "@/types/request/UpdateActivityRequest";
+import type { SubmitRequest } from "@/types/request/SubmitRequest";
 import type { ActivityResponse } from "@/types/response/ActivityResponse";
 import type { ActivitySummaryResponse } from "@/types/response/ActivitySummaryResponse";
+import type { EvaluationResult } from "@/types/response/EvaluationResult";
 import type { WorkspaceResponse } from "@/types/response/WorkspaceResponse";
 
 interface PaginatedResponse<T> {
@@ -46,5 +48,13 @@ export const deleteActivity = async (id: string): Promise<void> => {
 
 export const getWorkspace = async (id: string): Promise<WorkspaceResponse> => {
   const response = await api.get<WorkspaceResponse>(`/activity/${id}/workspace`);
+  return response.data;
+};
+
+export const submitSolution = async (
+  activityId: string,
+  data: SubmitRequest
+): Promise<EvaluationResult> => {
+  const response = await api.post<EvaluationResult>(`/activity/${activityId}/submit`, data);
   return response.data;
 };

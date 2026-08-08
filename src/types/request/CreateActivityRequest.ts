@@ -1,5 +1,14 @@
 import type { CodeFile } from "../CodeFile";
 
+export interface ActivityRules {
+  allowCopy?: boolean;
+  allowPaste?: boolean;
+  allowCodeEdit?: boolean;
+  allowLanguageChange?: boolean;
+  allowFileUpload?: boolean;
+  allowFileDownload?: boolean;
+}
+
 export interface CreateActivityRequest {
   subjectId: number;
   languageId: number;
@@ -7,6 +16,5 @@ export interface CreateActivityRequest {
   description?: string;
   starterCode?: CodeFile[];
   maxAttempts?: number;
-  allowCopy?: boolean;
-  allowPaste?: boolean;
+  rules?: ActivityRules;
 }

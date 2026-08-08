@@ -57,7 +57,12 @@ export const interceptorsConfig = (api: AxiosInstance) => {
     (error) => {
       const status = error.response ? error.response.status : null;
 
-      if (status === 404) {
+      if (status === 400) {
+        logger.error("Error 400: Bad Request", JSON.stringify(error.response?.data, null, 2));
+        toast.error("Error 400: Datos inválidos", {
+          description: error.response?.data?.error || "Verifica los campos enviados",
+        });
+      } else if (status === 404) {
         toast.error("Error 404: Recurso no Encontrado", {
           description: status,
         });

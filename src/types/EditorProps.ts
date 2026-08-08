@@ -2,6 +2,7 @@ export interface EditorLanguage {
   id: number;
   monacoId: string;
   name: string;
+  fileExtension: string;
 }
 
 export interface EditorCodeFile {

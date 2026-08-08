@@ -9,11 +9,19 @@ interface ActivityConfigCardsProps {
   description: string;
   allowCopy: boolean;
   allowPaste: boolean;
+  allowEdit: boolean;
+  allowLanguageChange: boolean;
+  allowUpload: boolean;
+  allowDownload: boolean;
   maxAttempts: string;
   onTitleChange: (value: string) => void;
   onDescriptionChange: (value: string) => void;
   onAllowCopyChange: (value: boolean) => void;
   onAllowPasteChange: (value: boolean) => void;
+  onAllowEditChange: (value: boolean) => void;
+  onAllowLanguageChangeChange: (value: boolean) => void;
+  onAllowUploadChange: (value: boolean) => void;
+  onAllowDownloadChange: (value: boolean) => void;
   onMaxAttemptsChange: (value: string) => void;
 }
 
@@ -22,11 +30,19 @@ export function ActivityConfigCards({
   description,
   allowCopy,
   allowPaste,
+  allowEdit,
+  allowLanguageChange,
+  allowUpload,
+  allowDownload,
   maxAttempts,
   onTitleChange,
   onDescriptionChange,
   onAllowCopyChange,
   onAllowPasteChange,
+  onAllowEditChange,
+  onAllowLanguageChangeChange,
+  onAllowUploadChange,
+  onAllowDownloadChange,
   onMaxAttemptsChange,
 }: ActivityConfigCardsProps) {
   return (
@@ -83,6 +99,46 @@ export function ActivityConfigCards({
               id="allow-paste"
               checked={allowPaste}
               onCheckedChange={onAllowPasteChange}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <Label className="text-sm font-medium cursor-pointer" htmlFor="allow-edit">
+              Permitir Editar Código
+            </Label>
+            <Switch
+              id="allow-edit"
+              checked={allowEdit}
+              onCheckedChange={onAllowEditChange}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <Label className="text-sm font-medium cursor-pointer" htmlFor="allow-language-change">
+              Permitir Cambiar Lenguaje
+            </Label>
+            <Switch
+              id="allow-language-change"
+              checked={allowLanguageChange}
+              onCheckedChange={onAllowLanguageChangeChange}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <Label className="text-sm font-medium cursor-pointer" htmlFor="allow-upload">
+              Permitir Subir Archivos
+            </Label>
+            <Switch
+              id="allow-upload"
+              checked={allowUpload}
+              onCheckedChange={onAllowUploadChange}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <Label className="text-sm font-medium cursor-pointer" htmlFor="allow-download">
+              Permitir Descargar Código
+            </Label>
+            <Switch
+              id="allow-download"
+              checked={allowDownload}
+              onCheckedChange={onAllowDownloadChange}
             />
           </div>
           <div className="space-y-2 pt-4 border-t border-border">

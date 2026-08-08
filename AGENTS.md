@@ -33,7 +33,7 @@ The frontend is deployed on an **Oracle Cloud VPS** using Docker Compose behind 
 ```
 src/
 ├── pages/               # Route-level page components
-│   ├── EmbedEditor.tsx   # Public embedded editor (for Moodle iframe)
+│   ├── EmbedActivity.tsx  # Embedded activity editor (iframe in Moodle, per-activity)
 │   ├── Login.tsx         # Login page
 │   ├── Register.tsx      # Registration page
 │   ├── Dashboard.tsx     # Main dashboard (overview)
@@ -78,7 +78,7 @@ src/
 │   ├── response/         # Response DTOs (ActivityResponse, AuthResponse, etc.)
 │   ├── dto/              # General DTOs (InvitationDTO)
 │   ├── enum/             # Constants (ExecutionStatus)
-│   ├── EditorProps.ts    # EditorLanguage, EditorCodeFile interfaces
+│   ├── EditorProps.ts    # EditorLanguage (id, monacoId, name, fileExtension), EditorCodeFile
 │   ├── CourseProps.ts    # Course/subject type
 │   └── CodeFile.ts
 │
@@ -186,6 +186,7 @@ Use **React Hook Form** with **Zod** validation. Form components (LoginForm, Reg
 | `/login`                                    | No            | —             | Login page                 |
 | `/register`                                 | No            | —             | Registration page          |
 | `/embed/editor`                             | No            | —             | Public embedded editor (for Moodle iframe) |
+| `/embed/activity/:activityId`              | No            | —             | Embedded activity editor with workspace + restrictions |
 | `/dashboard`                                | Yes           | —             | Main dashboard             |
 | `/course`                                   | Yes           | —             | Subject listing            |
 | `/subject/:id`                              | Yes           | —             | Subject detail with activities |
@@ -237,11 +238,38 @@ Nginx config uses `try_files $uri $uri/ /index.html` for SPA routing support.
 ## Important Notes
 
 - **The `/embed/editor` route is public** (no auth required) — it is designed to be embedded as an iframe in Moodle. It hardcodes the supported languages locally (not fetched from the API).
+- **The `/embed/activity/:activityId` route** is the activity-specific embedded editor. It fetches the workspace from the API, enforces teacher-configured restrictions, and fetches all languages from `/programming-language` when language switching is allowed.
 - **Code and stdin are sent to the backend in Base64** to support special characters and binary-safe transport.
 - **The `Student` role exists for registration but has no dedicated UI yet** — the `/student` page is a placeholder.
 - The **invitation system** (`/access`) generates one-time-use codes to register teachers. Only `God` role can access this.
 - **Theme support** is provided via `next-themes` (light/dark) with a `ModeToggle` component.
 - The API base URL comment in `src/lib/axios.ts` shows the local alternative for development — swap the comment when working locally.
+
+### Activity Restrictions (Profesor-controlled)
+
+Teachers can configure the following restrictions per activity. These flow from the editor configuration UI → `CreateActivityRequest`/`UpdateActivityRequest` → backend → `WorkspaceResponse` → `EmbedActivity` → `EditorComponent`:
+
+| Field                 | Default | Effect when disabled                                          |
+| --------------------- | :-----: | ------------------------------------------------------------- |
+| `allowCopy`           | `true`  | Blocks Ctrl+C / Ctrl+X in Monaco via `addCommand` no-ops     |
+| `allowPaste`          | `true`  | Blocks Ctrl+V in Monaco via `addCommand` no-op               |
+| `allowEdit`           | `true`  | Sets Monaco `options.readOnly: true` (code unmodifiable)     |
+| `allowLanguageChange` | `true`  | Hides the language selector dropdown in `EditorToolbar`. When enabled, `EmbedActivity` fetches all languages from `/programming-language` |
+| `allowUpload`         | `true`  | Hides the file upload button in `EditorToolbar`              |
+| `allowDownload`       | `true`  | Hides the file download button in `EditorToolbar`            |
+| `maxAttempts`         | `0`     | Maximum execution attempts (0 = unlimited). **Not yet enforced client-side** |
+
+### Editor File Upload/Download
+
+- **Upload:** Hidden `<input type="file">` triggered by button click. Reads file content via `FileReader` and loads into Monaco.
+- **Download:** Creates a `Blob` from the editor code and triggers download via a temporary `<a>` element. File extension comes from `LanguageResponse.fileExtension` (not a hardcoded map).
+
+### Language Editing
+
+`LanguageForm.tsx` supports both creation and editing modes:
+- **Creation:** `POST /programming-language` — all fields required
+- **Editing:** `PUT /programming-language/:id` — all fields optional, form pre-filled with existing data. Triggered via edit icon in `LanguageTable.tsx`.
+- The form field "Identifier Monaco" (`monacoName` in schema) maps to `editorIdentifier` in the API.
 
 ---
 
@@ -328,6 +356,7 @@ When rate-limited, the backend returns **HTTP 429**. The frontend shows a "wait 
 | POST   | `/execution/run-with-files`  | No       | Execute multiple files (rate-limited)  |
 | GET    | `/programming-language`      | Yes      | List languages (God only)              |
 | POST   | `/programming-language`      | Yes      | Create language (God only)             |
+| PUT    | `/programming-language/:id`  | Yes      | Update language (God only)             |
 | DELETE | `/programming-language/:id`  | Yes      | Delete language (God only)             |
 | GET    | `/invitation`                | Yes      | List invitations, paginated (God only) |
 | POST   | `/invitation`                | Yes      | Create invitation code (God only)      |
