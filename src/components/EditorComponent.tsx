@@ -1,5 +1,7 @@
 import type { EditorCodeFile, EditorLanguage } from '@/types/EditorProps';
 import type { EditorExecutionResponse } from '@/types/response/EditorExecutionResponse';
+import type { PublicTestCase } from '@/types/response/PublicTestCase';
+import type { EvaluationResult } from '@/types/response/EvaluationResult';
 import { useEffect, useState } from 'react';
 import { executionCode } from '@/service/EditorService';
 import { encodeToBase64 } from '@/utils/base64.util';
@@ -21,9 +23,44 @@ interface EditorPropsInfo {
   disableLanguageChange?: boolean;
   disableUpload?: boolean;
   disableDownload?: boolean;
+  testCases?: PublicTestCase[];
+  maxAttempts?: number;
+  onSubmit?: (code: string, languageId: number) => void;
+  evaluationResult?: EvaluationResult | null;
+  isSubmitting?: boolean;
+  onAddTestCase?: () => void;
 }
 
-export default function EditorComponent({ languages, initialCode, onChangeCode, onChangeLanguage, disableCopy, disablePaste, disableEdit, disableLanguageChange, disableUpload, disableDownload }: EditorPropsInfo) {
+const MONACO_LANG_FALLBACK: Record<string, string> = {
+  javascript: "javascript",
+  typescript: "typescript",
+  python: "python",
+  java: "java",
+  c: "c",
+  cpp: "cpp",
+  "c++": "cpp",
+  csharp: "csharp",
+  "c#": "csharp",
+  go: "go",
+  rust: "rust",
+  ruby: "ruby",
+  php: "php",
+  swift: "swift",
+  kotlin: "kotlin",
+  scala: "scala",
+  r: "r",
+  sql: "sql",
+  lua: "lua",
+  dart: "dart",
+  haskell: "haskell",
+  perl: "perl",
+};
+
+export default function EditorComponent({
+  languages, initialCode, onChangeCode, onChangeLanguage,
+  disableCopy, disablePaste, disableEdit, disableLanguageChange, disableUpload, disableDownload,
+  testCases, maxAttempts, onSubmit, evaluationResult, isSubmitting, onAddTestCase,
+}: EditorPropsInfo) {
   const [language, setLanguage] = useState<number>(initialCode?.languageId ?? languages[0]?.id ?? 1);
   const [code, setCode] = useState<string>(initialCode?.code || "");
   const [darkMode, setDarkMode] = useState(false);
@@ -31,8 +68,13 @@ export default function EditorComponent({ languages, initialCode, onChangeCode, 
   const [fontSize, setFontSize] = useState<number>(14);
   const [output, setOutput] = useState<string>("Esperando ejecución...");
   const [isExecuting, setIsExecuting] = useState(false);
-  const currentLanguage = languages.find(l => l.id === language)?.monacoId || "plaintext";
-  const currentLanguageExtension = languages.find(l => l.id === language)?.fileExtension || "txt";
+  const [attemptCount, setAttemptCount] = useState(0);
+
+  const resolvedLang = languages.find(l => l.id === language);
+  const currentLanguage = resolvedLang?.monacoId
+    || MONACO_LANG_FALLBACK[resolvedLang?.name?.toLowerCase() ?? ""]
+    || "plaintext";
+  const currentLanguageExtension = resolvedLang?.fileExtension || "txt";
 
   useEffect(() => {
     if (initialCode) {
@@ -85,13 +127,14 @@ export default function EditorComponent({ languages, initialCode, onChangeCode, 
       }
 
       setOutput(formattedOutput);
-    } catch (error: any) {
-      if (error?.response?.status === 429) {
+    } catch (error: unknown) {
+      const err = error as { response?: { status?: number; data?: { error?: string } } };
+      if (err?.response?.status === 429) {
         setOutput("Límite de ejecuciones excedido. Por favor, espera cinco minutos antes de volver a intentarlo.");
         return;
       }
-      if (error?.response?.data?.error) {
-        setOutput(`Error: ${error.response.data.error}`);
+      if (err?.response?.data?.error) {
+        setOutput(`Error: ${err.response.data.error}`);
         return;
       }
       setOutput("Error de comunicación con el servidor. Revisa tu conexión o intenta de nuevo más tarde.");
@@ -99,6 +142,24 @@ export default function EditorComponent({ languages, initialCode, onChangeCode, 
       setIsExecuting(false);
     }
   };
+
+  const handleSubmit = () => {
+    if (!code.trim() || !onSubmit) return;
+    
+    if (maxAttempts && maxAttempts > 0 && attemptCount >= maxAttempts) {
+      setOutput("Has alcanzado el límite de intentos permitidos para esta actividad.");
+      return;
+    }
+    
+    onSubmit(code, language);
+  };
+
+  // Incrementar contador cuando hay un resultado de evaluación
+  useEffect(() => {
+    if (evaluationResult) {
+      setAttemptCount(prev => prev + 1);
+    }
+  }, [evaluationResult]);
 
   const handleLanguageSelector = (value: string) => {
     const newLangId = Number(value);
@@ -154,12 +215,21 @@ export default function EditorComponent({ languages, initialCode, onChangeCode, 
             output={output}
             isExecuting={isExecuting}
             onRun={handleRunCode}
+            evaluationResult={evaluationResult}
           />
         </div>
 
         <div className="h-56 flex border-t border-border bg-background">
           <InputPanel input={input} onChange={setInput} />
-          <TestCasesPanel />
+          <TestCasesPanel
+            testCases={testCases}
+            evaluationResult={evaluationResult}
+            onSubmit={onSubmit ? handleSubmit : undefined}
+            isSubmitting={isSubmitting}
+            maxAttempts={maxAttempts}
+            attemptCount={attemptCount}
+            onAddTestCase={onAddTestCase}
+          />
         </div>
       </div>
     </div>
