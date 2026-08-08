@@ -12,11 +12,15 @@ import { Button } from "@/components/ui/button";
 import { Loader2, ArrowLeft, Save } from "lucide-react";
 import { createActivity, getActivitiesById } from "@/service/ActivityService";
 import { getAllLanguages } from "@/service/LanguageService";
+import { getTestCases, createTestCase } from "@/service/TestCaseService";
 import type { CreateActivityRequest } from "@/types/request/CreateActivityRequest";
 import type { EditorLanguage } from "@/types/EditorProps";
+import type { TestCase } from "@/types/response/TestCase";
 
 import EditorComponent from "@/components/EditorComponent";
 import { ActivityConfigCards } from "@/components/ActivityConfigCards";
+import { TestCaseManager } from "@/components/test-case/TestCaseManager";
+import { TestCaseManagementModal } from "@/components/test-case/TestCaseManagementModal";
 import type { SubjectResponse } from "@/types/response/SubjectResponse";
 import { getSubjectById } from "@/service/SubjectService";
 import { encodeToBase64, decodeFromBase64 } from "@/utils/base64.util";
@@ -34,6 +38,8 @@ export default function CreateActivityView() {
   const [isLoadingLanguages, setIsLoadingLanguages] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [subject, setSubject] = useState<SubjectResponse | null>(null);
+  const [testCases, setTestCases] = useState<TestCase[]>([]);
+  const [isTestCaseModalOpen, setIsTestCaseModalOpen] = useState(false);
 
   
   const [formData, setFormData] = useState({
@@ -68,7 +74,10 @@ useEffect(() => {
         setEditorLanguages(mappedLangs);
 
         if (duplicateId) {
-          const originalActivity = await getActivitiesById(duplicateId);
+          const [originalActivity, testCasesData] = await Promise.all([
+            getActivitiesById(duplicateId),
+            getTestCases(duplicateId).catch(() => [])
+          ]);
           let starterCodeStr = "";
           if (originalActivity.starterCode && originalActivity.starterCode.length > 0) {
             try {
@@ -77,17 +86,18 @@ useEffect(() => {
               logger.error("Error decodificando starterCode:", e);
             }
           }
+          setTestCases(testCasesData);
           setFormData({
             title: `Copia de ${originalActivity.title}`,
             description: originalActivity.description || "",
             languageId: originalActivity.languageId,
             maxAttempts: originalActivity.maxAttempts.toString(),
-            allowCopy: originalActivity.allowCopy,
-            allowPaste: originalActivity.allowPaste,
-            allowEdit: originalActivity.allowEdit,
-            allowLanguageChange: originalActivity.allowLanguageChange,
-            allowUpload: originalActivity.allowUpload,
-            allowDownload: originalActivity.allowDownload,
+            allowCopy: originalActivity.rules.allowCopy,
+            allowPaste: originalActivity.rules.allowPaste,
+            allowEdit: originalActivity.rules.allowCodeEdit,
+            allowLanguageChange: originalActivity.rules.allowLanguageChange,
+            allowUpload: originalActivity.rules.allowFileUpload,
+            allowDownload: originalActivity.rules.allowFileDownload,
             starterCode: starterCodeStr,
           });
         } else if (mappedLangs.length > 0) {
@@ -112,21 +122,34 @@ useEffect(() => {
         subjectId: Number(subjectId),
         languageId: formData.languageId,
         title: formData.title,
-        description: formData.description,
+        description: formData.description || undefined,
         maxAttempts: Number(formData.maxAttempts) || 0,
-        allowCopy: formData.allowCopy,
-        allowPaste: formData.allowPaste,
-        allowEdit: formData.allowEdit,
-        allowLanguageChange: formData.allowLanguageChange,
-        allowUpload: formData.allowUpload,
-        allowDownload: formData.allowDownload,
+        rules: {
+          allowCopy: formData.allowCopy,
+          allowPaste: formData.allowPaste,
+          allowCodeEdit: formData.allowEdit,
+          allowLanguageChange: formData.allowLanguageChange,
+          allowFileUpload: formData.allowUpload,
+          allowFileDownload: formData.allowDownload,
+        },
         starterCode: formData.starterCode ? [{
           name: "main", 
           content: encodeToBase64(formData.starterCode)
         }] : undefined
       };
 
-      await createActivity(payload);
+      const createdActivity = await createActivity(payload);
+      const activityId = createdActivity.id;
+
+      // Guardar test cases (todos tienen ID temporal negativo)
+      for (const tc of testCases) {
+        await createTestCase(activityId, {
+          input: tc.input,
+          expectedOutput: tc.expectedOutput,
+          isHidden: tc.isHidden,
+        });
+      }
+
       navigate(`/subject/${subjectId}`);
       
     } catch (error) {
@@ -218,6 +241,11 @@ useEffect(() => {
             onAllowDownloadChange={(v) => setFormData(prev => ({ ...prev, allowDownload: v }))}
             onMaxAttemptsChange={(v) => setFormData(prev => ({ ...prev, maxAttempts: v }))}
           />
+
+          <TestCaseManager
+            testCases={testCases}
+            onOpenManagement={() => setIsTestCaseModalOpen(true)}
+          />
         </div>
 
         {/* COLUMNA DERECHA: El Editor (Ocupa todo el espacio restante) */}
@@ -233,9 +261,20 @@ useEffect(() => {
               initialCode={{ id: "1", nameFile: "main", code: formData.starterCode, languageId: formData.languageId }}
               onChangeCode={(code) => setFormData(prev => ({ ...prev, starterCode: code }))}
               onChangeLanguage={(id) => setFormData(prev => ({ ...prev, languageId: id }))}
+              onAddTestCase={() => setIsTestCaseModalOpen(true)}
             />
           )}
         </div>
+
+        {/* Modal de Gestión de Casos de Prueba */}
+        <TestCaseManagementModal
+          open={isTestCaseModalOpen}
+          onClose={() => setIsTestCaseModalOpen(false)}
+          testCases={testCases}
+          onChange={setTestCases}
+          currentCode={formData.starterCode}
+          languageId={formData.languageId}
+        />
 
       </div>
     </div>

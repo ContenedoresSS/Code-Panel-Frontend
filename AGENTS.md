@@ -45,7 +45,7 @@ src/
 │   ├── Student.tsx       # Student view (placeholder — not implemented)
 │   ├── Setting.tsx       # User settings
 │   ├── Access.tsx        # Invitation code management (God only)
-│   └── Language.tsx      # Programming language management (God only)
+│   ── Language.tsx      # Programming language management (God only)
 │
 ├── components/
 │   ├── ui/               # shadcn/ui primitives (button, card, sidebar, etc.)
@@ -62,23 +62,42 @@ src/
 │   ├── InvitationTable.tsx
 │   ├── SortableActivityItem.tsx # Draggable activity item
 │   ├── ModeToggle.tsx        # Light/dark theme toggle
-│   └── theme-provider.tsx
+│   ├── theme-provider.tsx
+│   ├── ActivityConfigCards.tsx  # Activity configuration card (restrictions, general info)
+│   └── test-case/            # Test case management components
+│       ├── TestCaseModal.tsx            # Create/edit single test case
+│       ├── TestCaseList.tsx             # List of test cases
+│       ├── TestCaseManager.tsx          # Button to open management modal
+│       ├── TestCaseManagementModal.tsx  # Full management modal with simulation
+│       ── TestSimulationResult.tsx     # Simulation results display
 │
 ├── service/              # API service layer (one file per resource)
 │   ├── AuthService.ts        # login, register, refreshSession
 │   ├── TokenService.ts       # JWT management (localStorage)
 │   ├── SubjectService.ts     # Subject CRUD
-│   ├── ActivityService.ts    # Activity CRUD
+│   ├── ActivityService.ts    # Activity CRUD + submitSolution
 │   ├── EditorService.ts      # Code execution endpoint
 │   ├── LanguageService.ts    # Language CRUD
-│   └── InvitationsService.ts # Invitation code CRUD
+│   ├── InvitationsService.ts # Invitation code CRUD
+│   └── TestCaseService.ts    # Test case CRUD
 │
 ├── types/
-│   ├── request/          # Request DTOs (CreateActivityRequest, LoginRequest, etc.)
-│   ├── response/         # Response DTOs (ActivityResponse, AuthResponse, etc.)
+│   ├── request/          # Request DTOs
+│   │   ├── CreateActivityRequest.ts  (includes ActivityRules)
+│   │   ├── UpdateActivityRequest.ts
+│   │   ├── CreateTestCaseRequest.ts
+│   │   ├── UpdateTestCaseRequest.ts
+│   │   ├── SubmitRequest.ts
+│   │   ── ...
+│   ├── response/         # Response DTOs
+│   │   ├── ActivityResponse.ts  (includes ActivityRulesResponse)
+│   │   ├── TestCase.ts
+│   │   ├── PublicTestCase.ts
+│   │   ├── EvaluationResult.ts
+│   │   └── ...
 │   ├── dto/              # General DTOs (InvitationDTO)
 │   ├── enum/             # Constants (ExecutionStatus)
-│   ├── EditorProps.ts    # EditorLanguage (id, monacoId, name, fileExtension), EditorCodeFile
+│   ├── EditorProps.ts    # EditorLanguage, EditorCodeFile
 │   ├── CourseProps.ts    # Course/subject type
 │   └── CodeFile.ts
 │
@@ -254,10 +273,10 @@ Teachers can configure the following restrictions per activity. These flow from 
 | `allowCopy`           | `true`  | Blocks Ctrl+C / Ctrl+X in Monaco via `addCommand` no-ops     |
 | `allowPaste`          | `true`  | Blocks Ctrl+V in Monaco via `addCommand` no-op               |
 | `allowEdit`           | `true`  | Sets Monaco `options.readOnly: true` (code unmodifiable)     |
-| `allowLanguageChange` | `true`  | Hides the language selector dropdown in `EditorToolbar`. When enabled, `EmbedActivity` fetches all languages from `/programming-language` |
+| `allowLanguageChange` | `true`  | Disables the language selector dropdown in `EditorToolbar`. When enabled, `EmbedActivity` fetches all languages from `/programming-language` |
 | `allowUpload`         | `true`  | Hides the file upload button in `EditorToolbar`              |
 | `allowDownload`       | `true`  | Hides the file download button in `EditorToolbar`            |
-| `maxAttempts`         | `0`     | Maximum execution attempts (0 = unlimited). **Not yet enforced client-side** |
+| `maxAttempts`         | `0`     | Maximum execution attempts (0 = unlimited). **Enforced client-side** — blocks the Test button when limit is reached. Backend returns 403 if exceeded. |
 
 ### Editor File Upload/Download
 
@@ -270,6 +289,34 @@ Teachers can configure the following restrictions per activity. These flow from 
 - **Creation:** `POST /programming-language` — all fields required
 - **Editing:** `PUT /programming-language/:id` — all fields optional, form pre-filled with existing data. Triggered via edit icon in `LanguageTable.tsx`.
 - The form field "Identifier Monaco" (`monacoName` in schema) maps to `editorIdentifier` in the API.
+
+### Test Case System
+
+The test case system has two modes: **teacher management** and **student evaluation**.
+
+**Teacher management** (CreateActivityView / EditActivityView):
+1. Teacher clicks "Gestionar casos de prueba" button in the left sidebar
+2. Modal opens with full CRUD management (create, edit, delete)
+3. Each test case has: input (Base64), expected output (Base64), and isHidden flag
+4. "Ejecutar tests" button simulates all test cases against current code (uses `/execution/run`, no intent consumption)
+5. Test cases are stored 100% offline during editing — only synced to backend when saving the activity
+6. New test cases get temporary negative IDs (`-1`, `-2`, ...) during editing
+7. On save: new (ID < 0) → create, modified (ID > 0 with changes) → update, removed → delete
+
+**Student evaluation** (EmbedActivity):
+1. Student sees only **public** test cases in the UI (hidden ones filtered out)
+2. "Test" button calls `POST /activity/:id/submit` which evaluates against ALL test cases (public + hidden)
+3. Result is aggregate: `passedTests/totalTests (percentage%)` — no individual test results shown
+4. Hidden test cases are never revealed to the student
+5. `maxAttempts` is enforced client-side — button is disabled when limit reached
+
+### Editor Button Layout
+
+| Button | Location | Behavior | Attempts |
+| ------ | -------- | -------- | -------- |
+| **Run** | OutputPanel header | Executes code with user-provided stdin via `/execution/run` | No limit |
+| **Test** | TestCasesPanel header | Submits solution against all test cases via `/activity/:id/submit` | Consumes 1 attempt |
+| **+ Añadir** | TestCasesPanel header (teacher only) | Opens test case management modal | N/A |
 
 ---
 
@@ -352,6 +399,10 @@ When rate-limited, the backend returns **HTTP 429**. The frontend shows a "wait 
 | DELETE | `/activity/:id`              | Yes      | Delete activity                        |
 | GET    | `/activity/:id/workspace`    | No       | Public workspace for embedded editor   |
 | POST   | `/activity/:id/submit`       | Optional | Submit solution for evaluation         |
+| GET    | `/activity/:id/test-case`    | Yes      | List test cases (Teacher only)         |
+| POST   | `/activity/:id/test-case`    | Yes      | Create test case (Teacher only)        |
+| PUT    | `/activity/:id/test-case/:id`| Yes      | Update test case (Teacher only)        |
+| DELETE | `/activity/:id/test-case/:id`| Yes      | Delete test case (Teacher only)        |
 | POST   | `/execution/run`             | No       | Execute code (rate-limited)            |
 | POST   | `/execution/run-with-files`  | No       | Execute multiple files (rate-limited)  |
 | GET    | `/programming-language`      | Yes      | List languages (God only)              |
@@ -383,11 +434,12 @@ HTTP codes and their handling (via Axios interceptors):
 
 ### Service File Mapping
 
-| Endpoint                  | Service File                     |
-| ------------------------- | -------------------------------- |
-| `/auth/*`                 | `src/service/AuthService.ts`     |
-| `/subject/*`              | `src/service/SubjectService.ts`  |
-| `/activity/*`             | `src/service/ActivityService.ts` |
-| `/execution/run`          | `src/service/EditorService.ts`   |
-| `/programming-language/*` | `src/service/LanguageService.ts` |
-| `/invitation/*`           | `src/service/InvitationsService.ts` |
+| Endpoint                    | Service File                     |
+| --------------------------- | -------------------------------- |
+| `/auth/*`                   | `src/service/AuthService.ts`     |
+| `/subject/*`                | `src/service/SubjectService.ts`  |
+| `/activity/*`               | `src/service/ActivityService.ts` |
+| `/activity/:id/test-case/*` | `src/service/TestCaseService.ts` |
+| `/execution/run`            | `src/service/EditorService.ts`   |
+| `/programming-language/*`   | `src/service/LanguageService.ts` |
+| `/invitation/*`             | `src/service/InvitationsService.ts` |

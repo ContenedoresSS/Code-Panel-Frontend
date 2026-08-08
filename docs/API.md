@@ -287,6 +287,150 @@ Elimina una actividad.
 
 ---
 
+## Test Case (Casos de Prueba)
+
+### `GET /activity/:id/test-case`
+
+Obtiene todos los casos de prueba de una actividad (solo Teacher).
+
+**Response:** `TestCase[]`
+```json
+[
+  {
+    "id": 1,
+    "activityId": "uuid-string",
+    "input": "cHJpbnQoJ0hlbGxvIFdvcmxkJyk=",
+    "expectedOutput": "SGVsbG8gV29ybGQ=",
+    "isHidden": false
+  }
+]
+```
+
+| Campo            | Tipo              | Descripción                                      |
+| ---------------- | ----------------- | ------------------------------------------------ |
+| `id`             | number            | ID único del caso de prueba                      |
+| `activityId`     | string (UUID)     | ID de la actividad asociada                      |
+| `input`          | string \| null    | Entrada codificada en Base64 (UTF-8)             |
+| `expectedOutput` | string            | Salida esperada codificada en Base64 (UTF-8)     |
+| `isHidden`       | boolean           | Si es true, el estudiante no ve este caso        |
+
+---
+
+### `POST /activity/:id/test-case`
+
+Crea un nuevo caso de prueba para una actividad (solo Teacher).
+
+**Body:** `CreateTestCaseRequest`
+```json
+{
+  "input": "cHJpbnQoJ0hlbGxvIFdvcmxkJyk=",
+  "expectedOutput": "SGVsbG8gV29ybGQ=",
+  "isHidden": false
+}
+```
+
+| Campo            | Tipo              | Requerido | Descripción                                      |
+| ---------------- | ----------------- | :-------: | ------------------------------------------------ |
+| `input`          | string \| null    |    No     | Entrada codificada en Base64 (UTF-8)             |
+| `expectedOutput` | string            |    Sí     | Salida esperada codificada en Base64 (UTF-8)     |
+| `isHidden`       | boolean           |    No     | Si es true, el estudiante no ve este caso        |
+
+**Response:** `TestCase`
+
+---
+
+### `PUT /activity/:id/test-case/:testCaseId`
+
+Actualiza un caso de prueba existente (solo Teacher).
+
+**Body:** `UpdateTestCaseRequest`
+```json
+{
+  "input": "cHJpbnQoJ0hlbGxvIFdvcmxkJyk=",
+  "expectedOutput": "SGVsbG8gV29ybGQ=",
+  "isHidden": false
+}
+```
+
+Todos los campos son opcionales.
+
+**Response:** `TestCase`
+
+---
+
+### `DELETE /activity/:id/test-case/:testCaseId`
+
+Elimina un caso de prueba (solo Teacher).
+
+**Response:** `void` (204 No Content)
+
+---
+
+### `POST /activity/:id/submit`
+
+Envía una solución para evaluación automática contra todos los casos de prueba (públicos y ocultos).
+
+**Auth:** Opcional (usuarios no autenticados pueden ejecutar pero no se persiste)
+**Rate Limit:** 2 peticiones cada 5 minutos por IP
+
+**Body:** `SubmitRequest`
+```json
+{
+  "files": [
+    {
+      "name": "main.py",
+      "content": "cHJpbnQoJ0hlbGxvIFdvcmxkJyk="
+    }
+  ],
+  "languageId": 1
+}
+```
+
+| Campo        | Tipo         | Requerido | Descripción                                      |
+| ------------ | ------------ | :-------: | ------------------------------------------------ |
+| `files`      | CodeFile[]   |    Sí     | Archivos de código en Base64                     |
+| `languageId` | number       |    No     | Lenguaje (solo si `allowLanguageChange: true`)   |
+
+**Response:** `EvaluationResult`
+```json
+{
+  "status": "ACCEPTED",
+  "finalGrade": 100,
+  "passedTests": 3,
+  "totalTests": 5,
+  "executionTimeMs": 1450,
+  "compilerOutput": null,
+  "languageId": 1
+}
+```
+
+| Campo              | Tipo                  | Descripción                                      |
+| ------------------ | --------------------- | ------------------------------------------------ |
+| `status`           | SubmissionStatus      | Estado de la evaluación (ver tabla abajo)        |
+| `finalGrade`       | number                | Calificación sobre 100 (0 si hubo error)         |
+| `passedTests`      | number                | Número de casos de prueba pasados                |
+| `totalTests`       | number                | Número total de casos de prueba                  |
+| `executionTimeMs`  | number                | Tiempo total de ejecución en milisegundos        |
+| `compilerOutput`   | string \| null        | Mensaje de error si hubo fallo de compilación    |
+| `languageId`       | number                | ID del lenguaje de programación                  |
+
+### SubmissionStatus
+
+| Valor                  | Significado                                            |
+| ---------------------- | ------------------------------------------------------ |
+| `PENDING`              | Evaluación en progreso                                 |
+| `ACCEPTED`             | Solución correcta                                      |
+| `WRONG_ANSWER`         | Salida incorrecta                                      |
+| `TIME_LIMIT_EXCEEDED`  | Tiempo límite excedido                                 |
+| `COMPILE_ERROR`        | Error de compilación                                   |
+| `RUNTIME_ERROR`        | Error en tiempo de ejecución                           |
+
+**Errores especiales:**
+- **403:** Límite máximo de intentos alcanzado o regla de actividad impide la entrega
+- **429:** Rate limit excedido
+
+---
+
 ## Execution (Ejecución de Código)
 
 ### `POST /execution/run`
@@ -505,6 +649,7 @@ El frontend maneja los siguientes códigos HTTP globalmente vía interceptors:
 | `/auth/*`                   | `src/service/AuthService.ts`    |
 | `/subject/*`                | `src/service/SubjectService.ts` |
 | `/activity/*`               | `src/service/ActivityService.ts` |
+| `/activity/:id/test-case/*` | `src/service/TestCaseService.ts` |
 | `/execution/run`            | `src/service/EditorService.ts`  |
 | `/programming-language/*`   | `src/service/LanguageService.ts` |
 | `/invitation/*`             | `src/service/InvitationsService.ts` |

@@ -4,11 +4,12 @@ import { Loader2 } from "lucide-react";
 import EditorComponent from "@/components/EditorComponent";
 import { EmbedLoginForm } from "@/components/EmbedLoginForm";
 import { useAuth } from "@/assets/context/AuthContext";
-import { getWorkspace } from "@/service/ActivityService";
+import { getWorkspace, submitSolution } from "@/service/ActivityService";
 import { getAllLanguages } from "@/service/LanguageService";
-import { decodeFromBase64 } from "@/utils/base64.util";
+import { decodeFromBase64, encodeToBase64 } from "@/utils/base64.util";
 import type { EditorCodeFile, EditorLanguage } from "@/types/EditorProps";
 import type { WorkspaceResponse } from "@/types/response/WorkspaceResponse";
+import type { EvaluationResult } from "@/types/response/EvaluationResult";
 import { logger } from "@/lib/logger";
 
 export default function EmbedActivity() {
@@ -19,6 +20,37 @@ export default function EmbedActivity() {
   const [isLoadingWorkspace, setIsLoadingWorkspace] = useState(false);
   const [workspaceError, setWorkspaceError] = useState<string | null>(null);
   const [allLanguages, setAllLanguages] = useState<EditorLanguage[]>([]);
+  const [evaluationResult, setEvaluationResult] = useState<EvaluationResult | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const editorLanguage: EditorLanguage = useMemo(() => {
+    if (!workspace) {
+      return { id: 0, monacoId: "", name: "", fileExtension: "" };
+    }
+    const langFromList = allLanguages.find(l => l.id === workspace.language.id);
+    return {
+      id: workspace.language.id,
+      monacoId: langFromList?.monacoId ?? "",
+      name: workspace.language.name,
+      fileExtension: langFromList?.fileExtension ?? workspace.language.fileExtension ?? "",
+    };
+  }, [workspace, allLanguages]);
+
+  const initialCode: EditorCodeFile | undefined = useMemo(() => {
+    if (!workspace?.starterCode || workspace.starterCode.length === 0) return undefined;
+    try {
+      const decodedContent = decodeFromBase64(workspace.starterCode[0].content);
+      return {
+        id: "1",
+        nameFile: workspace.starterCode[0].name,
+        code: decodedContent,
+        languageId: workspace.language.id,
+      };
+    } catch (e) {
+      logger.error("Error decodificando starterCode:", e);
+      return undefined;
+    }
+  }, [workspace]);
 
   useEffect(() => {
     if (!isAuthenticated || !activityId) return;
@@ -28,7 +60,7 @@ export default function EmbedActivity() {
 
     Promise.all([
       getWorkspace(activityId),
-      getAllLanguages(),
+      getAllLanguages().catch(() => []),
     ])
       .then(([workspaceData, languagesData]) => {
         setWorkspace(workspaceData);
@@ -48,6 +80,24 @@ export default function EmbedActivity() {
       })
       .finally(() => setIsLoadingWorkspace(false));
   }, [isAuthenticated, activityId]);
+
+  const handleSubmit = async (code: string, languageId: number) => {
+    if (!activityId) return;
+    setIsSubmitting(true);
+    setEvaluationResult(null);
+
+    try {
+      const result = await submitSolution(activityId, {
+        files: [{ name: "main", content: encodeToBase64(code) }],
+        languageId,
+      });
+      setEvaluationResult(result);
+    } catch (err: unknown) {
+      logger.error("Error al enviar solución:", err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   if (isAuthLoading) {
     return (
@@ -88,30 +138,6 @@ export default function EmbedActivity() {
     );
   }
 
-  const editorLanguage: EditorLanguage = useMemo(() => ({
-    id: workspace.language.id,
-    monacoId: workspace.language.editorIdentifier,
-    name: workspace.language.name,
-    fileExtension: workspace.language.fileExtension,
-  }), [workspace.language.id, workspace.language.editorIdentifier, workspace.language.name, workspace.language.fileExtension]);
-
-  const initialCode: EditorCodeFile | undefined = useMemo(() => {
-    if (workspace.starterCode && workspace.starterCode.length > 0) {
-      try {
-        const decodedContent = decodeFromBase64(workspace.starterCode[0].content);
-        return {
-          id: "1",
-          nameFile: workspace.starterCode[0].name,
-          code: decodedContent,
-          languageId: workspace.language.id,
-        };
-      } catch (e) {
-        logger.error("Error decodificando starterCode:", e);
-      }
-    }
-    return undefined;
-  }, [workspace?.starterCode, workspace?.language?.id]);
-
   return (
     <div className="flex flex-col h-full w-full bg-background">
       <header className="flex-shrink-0 border-b border-border px-4 py-3">
@@ -125,14 +151,19 @@ export default function EmbedActivity() {
 
       <div className="flex-1 min-h-0">
         <EditorComponent
-          languages={workspace.allowLanguageChange ? allLanguages : [editorLanguage]}
+          languages={workspace.rules.allowLanguageChange ? allLanguages : [editorLanguage]}
           initialCode={initialCode}
-          disableCopy={!workspace.allowCopy}
-          disablePaste={!workspace.allowPaste}
-          disableEdit={!workspace.allowEdit}
-          disableLanguageChange={!workspace.allowLanguageChange}
-          disableUpload={!workspace.allowUpload}
-          disableDownload={!workspace.allowDownload}
+          disableCopy={!workspace.rules.allowCopy}
+          disablePaste={!workspace.rules.allowPaste}
+          disableEdit={!workspace.rules.allowCodeEdit}
+          disableLanguageChange={!workspace.rules.allowLanguageChange}
+          disableUpload={!workspace.rules.allowFileUpload}
+          disableDownload={!workspace.rules.allowFileDownload}
+          testCases={workspace.testCases.filter(tc => !tc.isHidden)}
+          maxAttempts={workspace.maxAttempts}
+          onSubmit={handleSubmit}
+          evaluationResult={evaluationResult}
+          isSubmitting={isSubmitting}
         />
       </div>
     </div>
