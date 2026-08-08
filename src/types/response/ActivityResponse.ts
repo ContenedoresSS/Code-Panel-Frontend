@@ -1,5 +1,14 @@
 import type { CodeFile } from "../CodeFile";
 
+export interface ActivityRulesResponse {
+  allowCopy: boolean;
+  allowPaste: boolean;
+  allowCodeEdit: boolean;
+  allowLanguageChange: boolean;
+  allowFileUpload: boolean;
+  allowFileDownload: boolean;
+}
+
 export interface ActivityResponse {
   id: string;
   professorId: string;
@@ -9,11 +18,6 @@ export interface ActivityResponse {
   description: string | null;
   starterCode: CodeFile[] | null;
   maxAttempts: number;
-  allowCopy: boolean;
-  allowPaste: boolean;
-  allowEdit: boolean;
-  allowLanguageChange: boolean;
-  allowUpload: boolean;
-  allowDownload: boolean;
+  rules: ActivityRulesResponse;
   createdAt: Date;
 }

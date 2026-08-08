@@ -162,20 +162,18 @@ export function EditorToolbar({
         </button>
       </div>
 
-      {!disableLanguageChange && (
-        <Select value={currentLanguage.toString()} onValueChange={onLanguageChange}>
-          <SelectTrigger className="w-[160px] h-8 text-xs bg-background">
-            <SelectValue placeholder="Lenguaje" />
-          </SelectTrigger>
-          <SelectContent>
-            {languages.map((lang) => (
-              <SelectItem key={lang.id} value={lang.id.toString()} className="text-xs">
-                {lang.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      )}
+      <Select value={currentLanguage.toString()} onValueChange={onLanguageChange}>
+        <SelectTrigger className="w-[160px] h-8 text-xs bg-background" disabled={disableLanguageChange}>
+          <SelectValue placeholder="Lenguaje" />
+        </SelectTrigger>
+        <SelectContent>
+          {languages.map((lang) => (
+            <SelectItem key={lang.id} value={lang.id.toString()} className="text-xs">
+              {lang.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   );
 }

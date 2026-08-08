@@ -1,22 +1,20 @@
 import type { CodeFile } from "../CodeFile";
+import type { ActivityRulesResponse } from "./ActivityResponse";
+import type { PublicTestCase } from "./PublicTestCase";
 
 export interface WorkspaceLanguage {
   id: number;
   name: string;
-  editorIdentifier: string;
   fileExtension: string;
 }
 
 export interface WorkspaceResponse {
+  activityId: string;
   title: string;
   description: string | null;
   language: WorkspaceLanguage;
   starterCode: CodeFile[] | null;
-  allowCopy: boolean;
-  allowPaste: boolean;
-  allowEdit: boolean;
-  allowLanguageChange: boolean;
-  allowUpload: boolean;
-  allowDownload: boolean;
+  rules: ActivityRulesResponse;
   maxAttempts: number;
+  testCases: PublicTestCase[];
 }
