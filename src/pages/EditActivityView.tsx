@@ -5,8 +5,10 @@ import { Loader2, ArrowLeft, Save } from "lucide-react";
 
 import { getActivitiesById, updateActivity } from "@/service/ActivityService";
 import { getAllLanguages } from "@/service/LanguageService";
+import { getTestCases, createTestCase, updateTestCase, deleteTestCase } from "@/service/TestCaseService";
 import type { UpdateActivityRequest } from "@/types/request/UpdateActivityRequest";
 import type { EditorLanguage } from "@/types/EditorProps";
+import type { TestCase } from "@/types/response/TestCase";
 import EditorComponent from "@/components/EditorComponent";
 import type { SubjectResponse } from "@/types/response/SubjectResponse";
 import { getSubjectById } from "@/service/SubjectService";
@@ -14,6 +16,8 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbP
 import { encodeToBase64, decodeFromBase64 } from "@/utils/base64.util";
 import { logger } from "@/lib/logger";
 import { ActivityConfigCards } from "@/components/ActivityConfigCards";
+import { TestCaseManager } from "@/components/test-case/TestCaseManager";
+import { TestCaseManagementModal } from "@/components/test-case/TestCaseManagementModal";
 
 
 
@@ -26,6 +30,8 @@ export default function EditActivityView() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [subject, setSubject] = useState<SubjectResponse | null>(null);
+  const [testCases, setTestCases] = useState<TestCase[]>([]);
+  const [isTestCaseModalOpen, setIsTestCaseModalOpen] = useState(false);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -49,11 +55,12 @@ export default function EditActivityView() {
       const numericSubjectId = Number(subjectId);
       try {
         setIsLoading(true);
-        // Pedimos los lenguajes y la información de LA actividad en paralelo
-        const [langsData, activityData, subjectData] = await Promise.all([
+        // Pedimos los lenguajes, la información de LA actividad, la materia y los test cases en paralelo
+        const [langsData, activityData, subjectData, testCasesData] = await Promise.all([
           getAllLanguages(),
           getActivitiesById(activityId),
-          getSubjectById(numericSubjectId)
+          getSubjectById(numericSubjectId),
+          getTestCases(activityId).catch(() => [])
         ]);
         
 
@@ -66,6 +73,7 @@ export default function EditActivityView() {
         }));
         setEditorLanguages(mappedLangs);
         setSubject(subjectData);
+        setTestCases(testCasesData);
 
         // Extraemos el código inicial si existe (es un array en la BD)
         let initialCodeStr = "";
@@ -83,12 +91,12 @@ export default function EditActivityView() {
           description: activityData.description || "",
           languageId: activityData.languageId,
           maxAttempts: activityData.maxAttempts.toString(),
-          allowCopy: activityData.allowCopy,
-          allowPaste: activityData.allowPaste,
-          allowEdit: activityData.allowEdit,
-          allowLanguageChange: activityData.allowLanguageChange,
-          allowUpload: activityData.allowUpload,
-          allowDownload: activityData.allowDownload,
+          allowCopy: activityData.rules.allowCopy,
+          allowPaste: activityData.rules.allowPaste,
+          allowEdit: activityData.rules.allowCodeEdit,
+          allowLanguageChange: activityData.rules.allowLanguageChange,
+          allowUpload: activityData.rules.allowFileUpload,
+          allowDownload: activityData.rules.allowFileDownload,
           starterCode: initialCodeStr,
         });
 
@@ -111,23 +119,69 @@ export default function EditActivityView() {
       
       const payload: UpdateActivityRequest = {
         title: formData.title,
-        description: formData.description,
+        description: formData.description || undefined,
         languageId: formData.languageId,
         maxAttempts: Number(formData.maxAttempts) || 0,
-        allowCopy: formData.allowCopy,
-        allowPaste: formData.allowPaste,
-        allowEdit: formData.allowEdit,
-        allowLanguageChange: formData.allowLanguageChange,
-        allowUpload: formData.allowUpload,
-        allowDownload: formData.allowDownload,
+        rules: {
+          allowCopy: formData.allowCopy,
+          allowPaste: formData.allowPaste,
+          allowCodeEdit: formData.allowEdit,
+          allowLanguageChange: formData.allowLanguageChange,
+          allowFileUpload: formData.allowUpload,
+          allowFileDownload: formData.allowDownload,
+        },
         starterCode: formData.starterCode ? [{
           name: "main",
           content: encodeToBase64(formData.starterCode)
         }] : undefined
       };
 
-      // Actualizamos vía API
+      // Actualizamos la actividad
       await updateActivity(activityId, payload);
+
+      // Sincronizar test cases
+      // Obtener test cases originales para comparar
+      const originalTestCases = await getTestCases(activityId);
+      
+      // Test cases nuevos (ID temporal negativo)
+      const newTestCases = testCases.filter(tc => tc.id < 0);
+      for (const tc of newTestCases) {
+        await createTestCase(activityId, {
+          input: tc.input,
+          expectedOutput: tc.expectedOutput,
+          isHidden: tc.isHidden,
+        });
+      }
+      
+      // Test cases modificados (ID positivo con cambios)
+      const modifiedTestCases = testCases.filter(tc => {
+        if (tc.id < 0) return false;
+        const original = originalTestCases.find(otc => otc.id === tc.id);
+        if (!original) return false;
+        return (
+          original.input !== tc.input ||
+          original.expectedOutput !== tc.expectedOutput ||
+          original.isHidden !== tc.isHidden
+        );
+      });
+      for (const tc of modifiedTestCases) {
+        await updateTestCase(activityId, tc.id, {
+          input: tc.input,
+          expectedOutput: tc.expectedOutput,
+          isHidden: tc.isHidden,
+        });
+      }
+      
+      // Test cases eliminados (en original pero no en testCases)
+      const deletedTestCases = originalTestCases.filter(otc => !testCases.find(tc => tc.id === otc.id));
+      for (const tc of deletedTestCases) {
+        await deleteTestCase(activityId, tc.id);
+      }
+
+      // Recargar test cases desde el backend para sincronizar IDs reales
+      const refreshedTestCases = await getTestCases(activityId);
+      setTestCases(refreshedTestCases);
+
       navigate(`/subject/${subjectId}`);
       
     } catch (error) {
@@ -200,17 +254,32 @@ export default function EditActivityView() {
             onAllowDownloadChange={(v) => setFormData(prev => ({ ...prev, allowDownload: v }))}
             onMaxAttemptsChange={(v) => setFormData(prev => ({ ...prev, maxAttempts: v }))}
           />
+
+          <TestCaseManager
+            testCases={testCases}
+            onOpenManagement={() => setIsTestCaseModalOpen(true)}
+          />
         </div>
 
         <div className="flex-1 border rounded-xl overflow-hidden bg-background shadow-sm flex flex-col">
           <EditorComponent 
             languages={editorLanguages}
-            // Importante: Pasamos el código y el lenguaje inicial para que el editor inicie con lo guardado
             initialCode={{ id: "1", nameFile: "main", code: formData.starterCode, languageId: formData.languageId }}
             onChangeCode={(code) => setFormData(prev => ({ ...prev, starterCode: code }))}
             onChangeLanguage={(id) => setFormData(prev => ({ ...prev, languageId: id }))}
+            onAddTestCase={() => setIsTestCaseModalOpen(true)}
           />
         </div>
+
+        {/* Modal de Gestión de Casos de Prueba */}
+        <TestCaseManagementModal
+          open={isTestCaseModalOpen}
+          onClose={() => setIsTestCaseModalOpen(false)}
+          testCases={testCases}
+          onChange={setTestCases}
+          currentCode={formData.starterCode}
+          languageId={formData.languageId}
+        />
       </div>
     </div>
   );
