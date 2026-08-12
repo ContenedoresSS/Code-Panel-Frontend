@@ -212,7 +212,7 @@ Use **React Hook Form** with **Zod** validation. Form components (LoginForm, Reg
 | `/subject/:id/activity/new`                 | Yes           | —             | Create new activity        |
 | `/subject/:id/activity/:activityId/edit`    | Yes           | —             | Edit existing activity     |
 | `/student`                                  | Yes           | —             | Student list (placeholder) |
-| `/setting`                                  | Yes           | —             | User settings              |
+| `/setting`                                  | Yes           | —             | User settings (profile info + change password) |
 | `/access`                                   | Yes           | `God`         | Invitation code management |
 | `/language`                                 | Yes           | `God`         | Language management        |
 | `/403`                                      | —             | —             | Access denied page         |
@@ -413,6 +413,9 @@ When rate-limited, the backend returns **HTTP 429**. The frontend shows a "wait 
 | POST   | `/invitation`                | Yes      | Create invitation code (God only)      |
 | PUT    | `/invitation/:id`            | Yes      | Update invitation (God only)           |
 | DELETE | `/invitation/:id`            | Yes      | Delete invitation (God only)           |
+| GET    | `/user/profile`              | Yes      | Get authenticated user profile         |
+| PATCH  | `/user/profile`              | Yes      | Update profile (name, lastName, etc.)  |
+| PATCH  | `/user/password`             | Yes      | Change password                        |
 
 ### Error Response Format
 
@@ -443,3 +446,26 @@ HTTP codes and their handling (via Axios interceptors):
 | `/execution/run`            | `src/service/EditorService.ts`   |
 | `/programming-language/*`   | `src/service/LanguageService.ts` |
 | `/invitation/*`             | `src/service/InvitationsService.ts` |
+| `/user/*`                   | `src/service/UserService.ts`        |
+
+---
+
+## Settings Page
+
+The `/setting` page (`src/pages/Setting.tsx`) provides two sections:
+
+### Profile Information
+- Fetched from `GET /user/profile` on mount
+- Editable fields: **name**, **lastName**
+- Read-only fields: **email**, **identifier**, **role** (shown as badge)
+- Saved via `PATCH /user/profile` — only changed fields are sent
+- On success, `AuthContext.updateUserName()` refreshes the name in the sidebar in real time
+
+### Change Password
+- Form with 3 fields: current password, new password, confirm password
+- Validated with Zod: min 8 chars for new password, must match confirmation
+- Calls `PATCH /user/password`
+- On success, all password fields are cleared
+- On HTTP 401, shows "La contraseña actual es incorrecta"
+
+Both forms use React Hook Form + Zod (same pattern as `LoginForm`).

@@ -9,7 +9,7 @@ import { Input } from "./ui/input"
 import { Button } from "./ui/button"
 import { loginUser} from "@/service/AuthService";
 import { NavLink, useNavigate } from "react-router";
-import { Loader2 } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/assets/context/AuthContext";
 import { logger } from "@/lib/logger";
 const formSchema = z.object({
@@ -20,6 +20,7 @@ const formSchema = z.object({
     })
 export function LoginForm (){
     const [isLoading, setIsLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
     const { loginState } = useAuth();
     const form = useForm<z.infer<typeof formSchema>>({
@@ -72,7 +73,17 @@ return(
                 render={({field})=>(   
                     <Field>
                         <FieldLabel htmlFor="password">Contraseña</FieldLabel>
-                        <Input {...field} id="password" autoComplete="off" type="password" placeholder="*******"  required/>
+                        <div className="relative">
+                          <Input {...field} id="password" autoComplete="off" type={showPassword ? "text" : "password"} placeholder="*******"  required/>
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                            tabIndex={-1}
+                          >
+                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
                     </Field>
                     )}>
                 </Controller>
