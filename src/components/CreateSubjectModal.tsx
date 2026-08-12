@@ -12,9 +12,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { CreateSubjectRequest } from "@/types/request/CreateSubjectRequest";
 
-// Tipo para los datos del formulario (sin ID, ya que se suele generar en el backend)
-
-
 interface CreateCourseModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -23,23 +20,19 @@ interface CreateCourseModalProps {
 
 export function CreateSubjectModal({ isOpen, onClose, onSubmit }: CreateCourseModalProps) {
   const [name, setName] = useState("");
-
+  const [imageUrl, setImageUrl] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validación básica
+
     if (!name.trim()) return;
 
-    // Enviamos los datos al componente padre
-    onSubmit({ name});
-    
-    // Limpiamos el formulario para la próxima vez que se abra
-    setName("");
+    onSubmit({ name, imageUrl: imageUrl.trim() || undefined });
 
+    setName("");
+    setImageUrl("");
   };
 
-  // Manejar el cierre desde la "X" o al hacer clic fuera del modal
   const handleOpenChange = (open: boolean) => {
     if (!open) {
       onClose();
@@ -55,42 +48,28 @@ export function CreateSubjectModal({ isOpen, onClose, onSubmit }: CreateCourseMo
             Ingresa los detalles del nuevo curso. Haz clic en guardar cuando termines.
           </DialogDescription>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="title">Título del curso</Label>
-            <Input 
-              id="name" 
+            <Label htmlFor="name">Título del curso</Label>
+            <Input
+              id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Ej. Introducción a React"
               required
             />
           </div>
-          
-          {/*<div className="space-y-2">
-            <Label htmlFor="description">Descripción</Label>
-            
-            <textarea 
-              id="description" 
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Breve descripción del curso..."
-              required
-              className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-800"
-            />
-          </div>
 
           <div className="space-y-2">
             <Label htmlFor="imageUrl">URL de la Portada</Label>
-            <Input 
-              id="imageUrl" 
+            <Input
+              id="imageUrl"
               value={imageUrl}
               onChange={(e) => setImageUrl(e.target.value)}
-              placeholder="https://ejemplo.com/imagen.jpg o ruta local"
-              required
+              placeholder="https://ejemplo.com/imagen.jpg"
             />
-          </div>*/}
+          </div>
 
           <DialogFooter className="pt-4">
             <Button type="button" variant="outline" onClick={onClose}>

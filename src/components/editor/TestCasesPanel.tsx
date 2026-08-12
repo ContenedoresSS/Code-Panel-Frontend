@@ -3,6 +3,7 @@ import { Button } from "../ui/button";
 import type { PublicTestCase } from "@/types/response/PublicTestCase";
 import type { EvaluationResult } from "@/types/response/EvaluationResult";
 import { decodeFromBase64 } from "@/utils/base64.util";
+import { escapeHtml } from "@/utils/sanitize.util";
 
 interface TestCasesPanelProps {
   testCases?: PublicTestCase[];
@@ -154,16 +155,16 @@ function TestCaseCard({ testCase, index, evaluated }: {
           <CheckCircle className="w-4 h-4 text-emerald-500" />
         )}
       </div>
-      <div className="text-xs font-mono space-y-1 mt-2">
-        <div>
-          <span className="text-muted-foreground">Input: </span>
-          <span className="text-foreground">{inputDisplay}</span>
+        <div className="text-xs font-mono space-y-1 mt-2">
+          <div>
+            <span className="text-muted-foreground">Input: </span>
+            <span className="text-foreground">{escapeHtml(inputDisplay)}</span>
+          </div>
+          <div>
+            <span className="text-muted-foreground">Output esperado: </span>
+            <span className="text-foreground">{escapeHtml(expectedDisplay)}</span>
+          </div>
         </div>
-        <div>
-          <span className="text-muted-foreground">Output esperado: </span>
-          <span className="text-foreground">{expectedDisplay}</span>
-        </div>
-      </div>
     </div>
   );
 }

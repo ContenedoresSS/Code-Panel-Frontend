@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { createInvitation, deleteInvitation, getAllInvitations, updateInvitation } from "@/service/InvitationsService";
 import { type InvitationDTO } from "@/types/dto/InvitationDTO";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 export default function Access () {
   const [generatedCode, setGeneratedCode] = useState<string>("");
@@ -15,6 +16,7 @@ export default function Access () {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [invitations, setInvitations] = useState<InvitationDTO[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
 
   const TEACHER_ROLE_ID = 3;
 
@@ -75,19 +77,22 @@ const handleToggleIsUsed = async (id: number, currentIsUsed: boolean) => {
     }
   };
 
-  const handleDeleteInvitation= async (id: number) => {
-    if (!window.confirm("¿Estás seguro de que deseas eliminar este código? Esta acción no se puede deshacer.")) {
-      return;
-    }
+  const handleDeleteInvitation = (id: number) => {
+    setDeleteId(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteId) return;
     try {
-      await deleteInvitation(id);
-      
-      setInvitations((prev) => prev.filter((inv) => inv.id !== id));
+      await deleteInvitation(deleteId);
+      setInvitations((prev) => prev.filter((inv) => inv.id !== deleteId));
       toast.success("Código de invitación eliminado correctamente");
     } catch (error) {
       toast.error("Error al intentar eliminar el código");
+    } finally {
+      setDeleteId(null);
     }
-  }
+  };
 
 return (
   <div className="p-6 space-y-6 max-w-7xl mx-auto animate-fade-in">
@@ -164,6 +169,14 @@ return (
           />
         </CardContent>
       </Card>
+
+      <ConfirmDialog
+        open={deleteId !== null}
+        onOpenChange={(open) => { if (!open) setDeleteId(null); }}
+        title="Eliminar Código de Invitación"
+        description="¿Estás seguro de que deseas eliminar este código? Esta acción no se puede deshacer."
+        onConfirm={confirmDelete}
+      />
 
     </div>
 );
