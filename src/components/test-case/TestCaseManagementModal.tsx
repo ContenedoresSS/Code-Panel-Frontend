@@ -13,6 +13,7 @@ import { TestSimulationResult, type TestSimulationResult as TestResultType } fro
 import { encodeToBase64, decodeFromBase64 } from "@/utils/base64.util";
 import { executionCode } from "@/service/EditorService";
 import type { TestCase } from "@/types/response/TestCase";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 interface TestCaseManagementModalProps {
   open: boolean;
@@ -35,6 +36,7 @@ export function TestCaseManagementModal({
   const [editingTestCase, setEditingTestCase] = useState<TestCase | null>(null);
   const [isTesting, setIsTesting] = useState(false);
   const [testResults, setTestResults] = useState<TestResultType[]>([]);
+  const [deleteTestCaseId, setDeleteTestCaseId] = useState<number | null>(null);
 
   const publicCount = testCases.filter((tc) => !tc.isHidden).length;
   const hiddenCount = testCases.filter((tc) => tc.isHidden).length;
@@ -82,8 +84,13 @@ export function TestCaseManagementModal({
   };
 
   const handleDelete = (testCaseId: number) => {
-    if (!confirm("¿Estás seguro de eliminar este caso de prueba?")) return;
-    onChange(testCases.filter((tc) => tc.id !== testCaseId));
+    setDeleteTestCaseId(testCaseId);
+  };
+
+  const confirmDelete = () => {
+    if (deleteTestCaseId === null) return;
+    onChange(testCases.filter((tc) => tc.id !== deleteTestCaseId));
+    setDeleteTestCaseId(null);
   };
 
   const handleRunTests = async () => {
@@ -216,6 +223,14 @@ export function TestCaseManagementModal({
         onClose={() => setIsModalOpen(false)}
         onSave={handleSave}
         testCase={editingTestCase}
+      />
+
+      <ConfirmDialog
+        open={deleteTestCaseId !== null}
+        onOpenChange={(open) => { if (!open) setDeleteTestCaseId(null); }}
+        title="Eliminar Caso de Prueba"
+        description="¿Estás seguro de eliminar este caso de prueba?"
+        onConfirm={confirmDelete}
       />
     </>
   );

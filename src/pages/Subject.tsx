@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import type { CreateSubjectRequest } from "@/types/request/CreateSubjectRequest";
 import { useNavigate } from "react-router";
 import { EditSubjecteModal } from "@/components/EditSubjectModal";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 
 
@@ -20,6 +21,7 @@ export default function Subject() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [courseToEdit, setCourseToEdit] = useState<SubjectResponse | null>(null);
+  const [deleteId, setDeleteId] = useState<number | string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -86,13 +88,20 @@ const handleEditSubject = (id: number | string) => {
     }
   };
 
-const handleDeleteSubject = async (id: number | string) => {
+const handleDeleteSubject = (id: number | string) => {
+  setDeleteId(id);
+};
+
+const confirmDelete = async () => {
+  if (!deleteId) return;
   try {
-    await deleteSubject(id);
-    setCourses(courses.filter(course => course.id !== id));
+    await deleteSubject(deleteId);
+    setCourses(courses.filter(course => course.id !== deleteId));
     toast.success("Materia eliminada correctamente");
   } catch (error) {
     toast.error("Error al eliminar la materia");
+  } finally {
+    setDeleteId(null);
   }
 };
 
@@ -161,6 +170,14 @@ const handleDeleteSubject = async (id: number | string) => {
         }}
         onSubmit={handleUpdateSubject}
         course={courseToEdit}
+      />
+
+      <ConfirmDialog
+        open={deleteId !== null}
+        onOpenChange={(open) => { if (!open) setDeleteId(null); }}
+        title="Eliminar Curso"
+        description="¿Estás seguro de que deseas eliminar este curso? Esta acción no se puede deshacer."
+        onConfirm={confirmDelete}
       />
     </div>
   );

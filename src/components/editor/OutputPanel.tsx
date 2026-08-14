@@ -38,7 +38,7 @@ export function OutputPanel({ output, isExecuting, onRun, evaluationResult }: Ou
             <span className="text-sm font-bold text-red-500">Error de compilación</span>
           </div>
           <p className="text-xs text-red-400 font-mono whitespace-pre-wrap">
-            {evaluationResult.compilerOutput}
+            {escapeHtml(evaluationResult.compilerOutput)}
           </p>
         </div>
       )}

@@ -36,6 +36,7 @@ import { Plus, Loader2 } from "lucide-react";
 import { getSubjectById } from "@/service/SubjectService";
 import { toast } from "sonner";
 import { logger } from "@/lib/logger";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 export default function SubjectDetailView() {
   const { id } = useParams<{ id: string }>();
@@ -44,6 +45,7 @@ export default function SubjectDetailView() {
   const [subject, setSubject] = useState<SubjectResponse | null>(null);
   const [activities, setActivities] = useState<ActivitySummaryResponse[]>([]); 
   const [isLoading, setIsLoading] = useState(true);
+  const [deleteActivityId, setDeleteActivityId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchSubjectAndActivities = async () => {
@@ -92,18 +94,20 @@ export default function SubjectDetailView() {
     navigate(`/subject/${id}/activity/${activityId}/edit`);
   };
 
-  const handleDeleteActivity = async (activityId: string) => {
-    if (!window.confirm("¿Estás seguro de que deseas eliminar esta actividad? Esta acción no se puede deshacer.")) {
-      return;
-    }
+  const handleDeleteActivity = (activityId: string) => {
+    setDeleteActivityId(activityId);
+  };
 
+  const confirmDeleteActivity = async () => {
+    if (!deleteActivityId) return;
     try {
-      await deleteActivity(activityId);
-
-      setActivities(prev => prev.filter(a => a.id !== activityId));
+      await deleteActivity(deleteActivityId);
+      setActivities(prev => prev.filter(a => a.id !== deleteActivityId));
     } catch (error) {
       logger.error("Error al eliminar la actividad:", error);
       toast.error("Hubo un error al eliminar la actividad.");
+    } finally {
+      setDeleteActivityId(null);
     }
   };
 
@@ -191,6 +195,14 @@ export default function SubjectDetailView() {
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={deleteActivityId !== null}
+        onOpenChange={(open) => { if (!open) setDeleteActivityId(null); }}
+        title="Eliminar Actividad"
+        description="¿Estás seguro de que deseas eliminar esta actividad? Esta acción no se puede deshacer."
+        onConfirm={confirmDeleteActivity}
+      />
 
     </div>
   );

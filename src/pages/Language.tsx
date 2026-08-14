@@ -8,12 +8,14 @@ import type { LanguageResponse } from "@/types/response/LanguageResponse";
 import { deleteLanguage } from "@/service/LanguageService";
 import { toast } from "sonner";
 import { logger } from "@/lib/logger";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 export default function Language (){
   const [showForm, setShowForm] = useState(false);
   const [editingLanguage, setEditingLanguage] = useState<LanguageResponse | null>(null);
   const [languages, setLanguages] = useState<LanguageResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
 
   const fetchLanguages = useCallback(async () => {
     try {
@@ -30,17 +32,21 @@ export default function Language (){
     fetchLanguages();
   }, [fetchLanguages]);
 
-  const handleDelete = async (id: number) => {
-    const confirm = window.confirm("¿Estás seguro de que deseas eliminar este entorno? Esta acción no se puede deshacer.");
-    if (!confirm) return;
+  const handleDelete = (id: number) => {
+    setDeleteId(id);
+  };
 
+  const confirmDelete = async () => {
+    if (!deleteId) return;
     try {
-      await deleteLanguage(id);
-      setLanguages((prevLanguages) => prevLanguages.filter((lang) => lang.id !== id));
+      await deleteLanguage(deleteId);
+      setLanguages((prevLanguages) => prevLanguages.filter((lang) => lang.id !== deleteId));
       toast.success("Lenguaje eliminado correctamente");
     } catch (error) {
       logger.error("Error al eliminar:", error);
       toast.error("No se pudo eliminar el lenguaje");
+    } finally {
+      setDeleteId(null);
     }
   };
 
@@ -98,6 +104,14 @@ export default function Language (){
           onEdit={handleEdit}
         />
       </div>
+
+      <ConfirmDialog
+        open={deleteId !== null}
+        onOpenChange={(open) => { if (!open) setDeleteId(null); }}
+        title="Eliminar Lenguaje"
+        description="¿Estás seguro de que deseas eliminar este entorno? Esta acción no se puede deshacer."
+        onConfirm={confirmDelete}
+      />
     </div>
   )
 }

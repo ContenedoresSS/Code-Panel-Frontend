@@ -16,38 +16,39 @@ import type { CreateSubjectRequest } from "@/types/request/CreateSubjectRequest"
 interface EditCourseModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (id: number , upadateDataSubject: CreateSubjectRequest) => void;
-  course: SubjectResponse | null; // Recibe el curso actual a editar
+  onSubmit: (id: number, updateDataSubject: CreateSubjectRequest) => void;
+  course: SubjectResponse | null;
 }
 
 export function EditSubjecteModal({ isOpen, onClose, onSubmit, course }: EditCourseModalProps) {
   const [formData, setFormData] = useState<CreateSubjectRequest>({
     name: "",
+    imageUrl: "",
   });
-  // Cuando el modal se abre o el curso cambia, prellenamos el input con el nombre actual
+
   useEffect(() => {
     if (course) {
       setFormData({
         name: course.name,
-        // Si en el futuro SubjectResponse tiene más datos, los asignas aquí:
-        // description: course.description || "",
+        imageUrl: course.imageUrl || "",
       });
     } else {
-      
       setFormData({
         name: "",
+        imageUrl: "",
       });
     }
   }, [course]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validación básica
+
     if (!formData.name.trim() || !course) return;
 
-    // Enviamos el ID y el objeto completo al componente padre
-    onSubmit(course.id, formData);
+    onSubmit(course.id, {
+      name: formData.name,
+      imageUrl: formData.imageUrl?.trim() || undefined,
+    });
   };
 
   const handleOpenChange = (open: boolean) => {
@@ -65,31 +66,28 @@ export function EditSubjecteModal({ isOpen, onClose, onSubmit, course }: EditCou
             Modifica la información del curso. Haz clic en guardar cuando termines.
           </DialogDescription>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div className="space-y-2">
             <Label htmlFor="edit-name">Nombre del curso</Label>
-            <Input 
-              id="edit-name" 
-              // Usamos formData.name
+            <Input
+              id="edit-name"
               value={formData.name}
-              // Actualizamos conservando el resto del objeto usando ...formData
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               placeholder="Ej. Introducción a React"
               required
             />
           </div>
 
-          {/* EJEMPLO PARA EL FUTURO:
-            <div className="space-y-2">
-              <Label htmlFor="edit-description">Descripción</Label>
-              <Input 
-                id="edit-description" 
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              />
-            </div>
-          */}
+          <div className="space-y-2">
+            <Label htmlFor="edit-imageUrl">URL de la Portada</Label>
+            <Input
+              id="edit-imageUrl"
+              value={formData.imageUrl || ""}
+              onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+              placeholder="https://ejemplo.com/imagen.jpg"
+            />
+          </div>
 
           <DialogFooter className="pt-4">
             <Button type="button" variant="outline" onClick={onClose}>
