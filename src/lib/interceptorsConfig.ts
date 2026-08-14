@@ -26,6 +26,10 @@ export const interceptorsConfig = (api: AxiosInstance) => {
       const originalRequest = error.config;
 
       if (error.response.status === 401 && !originalRequest._retry) {
+        if (originalRequest.url?.includes("/auth/")) {
+          return Promise.reject(error);
+        }
+
         originalRequest._retry = true;
 
         try {

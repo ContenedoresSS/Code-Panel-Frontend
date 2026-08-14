@@ -21,6 +21,7 @@ import SubjectDetailView from './pages/SubjectDetailView';
 import CreateActivityView from './pages/CreateActivityView';
 import EditActivityView from './pages/EditActivityView';
 import Subject from './pages/Subject';
+import RecoverPassword from './pages/RecoverPassword';
 import { UserRole } from './types/enum/UserRole';
 
 function App() {
@@ -34,6 +35,7 @@ function App() {
           <Route index element={<Navigate to="/login" replace />} />
           <Route path="login" element={<Login />} />
           <Route path="register" element={<Register />} />
+          <Route path="recover-password" element={<RecoverPassword />} />
           <Route path="403" element={<div className="p-10 text-center text-red-500 font-bold text-2xl">403 - Acceso Denegado</div>} />
         </Route>
         

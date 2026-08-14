@@ -5,10 +5,10 @@
 | Severidad | Pendientes | Resueltos |
 |-----------|:---------:|:---------:|
 | Crítica    | 0         | 3         |
-| Alta       | 3         | 3         |
-| Media      | 12        | 0         |
-| Baja       | 8         | 0         |
-| **Total**  | **23**    | **6**     |
+| Alta       | 1         | 5         |
+| Media      | 8         | 4         |
+| Baja       | 6         | 2         |
+| **Total**  | **15**    | **14**    |
 
 ---
 
@@ -87,7 +87,9 @@ const response = await api.get<PaginatedResponse<ActivitySummaryResponse>>('/act
 
 ## ALTA
 
-### 4. ~80% de código duplicado entre CreateActivity y EditActivity
+### ~~4. ~80% de código duplicado entre CreateActivity y EditActivity~~ ✅ RESUELTO
+
+**Resolución:** Se creó `src/lib/activity-form-utils.ts` con funciones puras (`mapApiLanguagesToEditorLanguages`, `populateFormFromActivity`, `buildActivityPayload`) y `src/components/ActivityFormLayout.tsx` como layout presentacional compartido. CreateActivityView pasó de 282 a 110 líneas, EditActivityView de 286 a 126 líneas.
 
 **Archivos:**
 - `src/pages/CreateActivityView.tsx` (241 líneas)
@@ -182,15 +184,9 @@ Además contiene estado local para `darkMode` del editor que es independiente de
 
 ---
 
-### 7. URLs hardcodeadas en código fuente
+### ~~7. URLs hardcodeadas en código fuente~~ ✅ RESUELTO
 
-**Archivos:**
-- `src/lib/axios.ts:5` — `"https://codepanel.orchfr.duckdns.org/api/v1"`
-- `src/components/SortableActivityItem.tsx:39` — `"https://codepanel.orchfr.duckdns.org/embed/activity/..."`
-
-Cambiar de entorno (local → staging → producción) requiere modificar código fuente.
-
-**Recomendación:** Usar variables de entorno de Vite (`import.meta.env.VITE_API_BASE_URL`) con fallback a localhost para desarrollo.
+**Resolución:** `src/lib/axios.ts` ahora usa `import.meta.env.VITE_API_BASE_URL` con fallback a `localhost:3000/api/v1`. El `.env` contiene la URL de producción y `.env.example` la de desarrollo. `SortableActivityItem.tsx` ya usaba `window.location.origin` dinámico.
 
 ---
 
@@ -338,11 +334,9 @@ Los valores están hardcodeados. No hay fetch real de estadísticas.
 
 ---
 
-### 16. Panel de test cases es UI muerta
+### ~~16. Panel de test cases es UI muerta~~ ✅ RESUELTO
 
-**Archivo:** `src/components/EditorComponent.tsx:252-282`
-
-Todo el panel de test cases es JSX estático con datos de ejemplo (Case 1 aprobado, Case 2 pendiente). Los botones "+ Añadir caso" y "Test" no tienen handlers.
+**Resolución:** `TestCasesPanel.tsx` recibe `testCases`, `evaluationResult`, `onSubmit`, `isSubmitting`, `maxAttempts` y `attemptCount` como props, con renderizado completo de casos de prueba públicos, indicador de intentos restantes, y botones funcionales de Test y Añadir.
 
 ---
 
@@ -382,27 +376,15 @@ La paginación está hardcodeada a página 1, 50 items. No hay UI para navegar p
 
 ---
 
-### 20. Botones Download/Upload sin handler
+### ~~20. Botones Download/Upload sin handler~~ ✅ RESUELTO
 
-**Archivo:** `src/components/EditorComponent.tsx:6,131-137`
-
-Los iconos `Download` y `Upload` de Lucide están importados y renderizados con estilos hover, pero sus botones no tienen `onClick`.
+**Resolución:** El `EditorToolbar.tsx` ya tiene handlers completos para Download y Upload conectados a los botones.
 
 ---
 
-### 21. Sin sanitización del output de ejecución
+### ~~21. Sin sanitización del output de ejecución~~ ✅ RESUELTO
 
-**Archivo:** `src/components/EditorComponent.tsx:230`
-
-```tsx
-<div className="... whitespace-pre-wrap">
-  {output}
-</div>
-```
-
-El output del backend se renderiza directamente como HTML. Si el backend no sanitiza, hay riesgo de XSS si un usuario logra que el código ejecutado produzca HTML/scripts en el output.
-
-**Recomendación:** Sanitizar el output antes de renderizar, o asegurar que el backend siempre escape el contenido.
+**Resolución:** `OutputPanel.tsx` usa `escapeHtml()` del util `src/utils/sanitize.util.ts` para todo el output del backend, incluyendo `compilerOutput`. `TestCasesPanel.tsx` también sanitiza `inputDisplay` y `expectedDisplay`.
 
 ---
 
@@ -450,8 +432,8 @@ const MOBILE_BREAKPOINT = 768;
 
 ### 28. Páginas placeholder sin implementar
 
-- `src/pages/Student.tsx` — `<h1>Estoy en alumnos</h1>`
-- `src/pages/Setting.tsx` — `<h1>Estoy en settings</h1>`
+- `src/pages/Student.tsx` — `<h1>Estoy en alumnos</h1>` (pendiente)
+- ~~`src/pages/Setting.tsx`~~ ✅ RESUELTO — ahora tiene sección de info de perfil y cambio de contraseña
 
 ### 29. `onEdit` de Language sin implementar
 

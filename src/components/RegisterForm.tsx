@@ -9,7 +9,7 @@ import { Input } from "./ui/input"
 import { Button } from "./ui/button"
 import { registerUser } from "@/service/AuthService";
 import { useNavigate } from "react-router";
-import { Loader2 } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 import { logger } from "@/lib/logger";
 const formSchema = z.object({
       name: z
@@ -34,6 +34,7 @@ const formSchema = z.object({
 })
 export function RegisterForm (){
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const form = useForm<z.infer<typeof formSchema>>({
       resolver: zodResolver(formSchema),
@@ -116,7 +117,17 @@ return(
                   render={({field})=>(   
                       <Field>
                           <FieldLabel htmlFor="password">Contraseña</FieldLabel>
-                          <Input {...field}  id="password" autoComplete="off" type="password" placeholder="*******"  required/>
+                          <div className="relative">
+                            <Input {...field}  id="password" autoComplete="off" type={showPassword ? "text" : "password"} placeholder="*******"  required/>
+                            <button
+                              type="button"
+                              onClick={() => setShowPassword(!showPassword)}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                              tabIndex={-1}
+                            >
+                              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </button>
+                          </div>
                           {form.formState.errors.password && (
                               <p className="text-red-500 text-xs mt-1">
                               {form.formState.errors.password.message}
@@ -131,7 +142,17 @@ return(
                   render={({field})=>(
                       <Field>
                           <FieldLabel htmlFor="confirmPassword">Confirmar Contraseña</FieldLabel>
-                          <Input {...field}  id="confirmPassword" autoComplete="off" type="password" placeholder="*******"  required/>
+                          <div className="relative">
+                            <Input {...field}  id="confirmPassword" autoComplete="off" type={showPassword ? "text" : "password"} placeholder="*******"  required/>
+                            <button
+                              type="button"
+                              onClick={() => setShowPassword(!showPassword)}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                              tabIndex={-1}
+                            >
+                              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </button>
+                          </div>
                           {form.formState.errors.confirmPassword && (
                               <p className="text-red-500 text-xs mt-1">
                               {form.formState.errors.confirmPassword.message}
