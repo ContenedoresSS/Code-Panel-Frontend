@@ -17,9 +17,7 @@ export const getActivitiesBySubject = async (
 ): Promise<ActivitySummaryResponse[]> => {
   const response = await api.get<PaginatedResponse<ActivitySummaryResponse>>("/activity");
   const allActivities = response.data.data;
-  return allActivities.filter(
-    (activity) => activity.subjectId === Number(subjectId)
-  );
+  return allActivities.filter((activity) => activity.subjectId === Number(subjectId));
 };
 
 export const getActivitiesById = async (id: string): Promise<ActivityResponse> => {

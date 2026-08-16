@@ -25,9 +25,6 @@ export const updateTestCase = async (
   return response.data;
 };
 
-export const deleteTestCase = async (
-  activityId: string,
-  testCaseId: number
-): Promise<void> => {
+export const deleteTestCase = async (activityId: string, testCaseId: number): Promise<void> => {
   await api.delete(`/activity/${activityId}/test-case/${testCaseId}`);
 };
