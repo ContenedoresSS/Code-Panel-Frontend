@@ -1,0 +1,77 @@
+# =============================================
+# CodePanel — Docker Compose
+# =============================================
+# Variables requeridas en un archivo .env al lado de este compose:
+#   POSTGRES_USER        Usuario de PostgreSQL
+#   POSTGRES_PASSWORD    Contraseña de PostgreSQL
+#   POSTGRES_DB          Base de datos de PostgreSQL
+# Opcionales:
+#   POSTGRES_PORT        Puerto host de PostgreSQL (default: 5432)
+#   HOST_PORT            Puerto host del backend (default: 5555)
+#   FRONTEND_PORT        Puerto host del frontend (default: 8080)
+#
+# El frontend expone la API en el mismo origen vía nginx reverse proxy
+# (location /api/v1 -> code-panel-back:3000), por lo que no es necesario
+# exponer los puertos de DB y backend en producción.
+
+services:
+  db_postgres:
+    image: postgres:16-alpine
+    container_name: postgres_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432" # opcional, quitar en producción
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - code-panel-net
+
+  code-panel-back:
+    image: ghcr.io/contenedoresss/code-panel-backend:latest
+    container_name: code-panel-back
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "${HOST_PORT:-5555}:3000" # opcional con reverse proxy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./templates:/app/templates
+    depends_on:
+      db_postgres:
+        condition: service_healthy
+    networks:
+      - code-panel-net
+
+  code-panel-front:
+    image: ghcr.io/contenedoresss/code-panel-frontend:latest
+    container_name: code-panel-front
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    depends_on:
+      code-panel-back:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - code-panel-net
+
+networks:
+  code-panel-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
