@@ -14,4 +14,5 @@ export interface EvaluationResult {
   executionTimeMs: number;
   compilerOutput: string | null;
   languageId: number;
+  saved: boolean;
 }

@@ -101,6 +101,11 @@ export function TestCasesPanel({
               }
             </span>
           </div>
+          {evaluationResult.saved === false && (
+            <p className="text-xs text-muted-foreground mt-1">
+              Evaluación no guardada (sesión anónima).
+            </p>
+          )}
         </div>
       )}
 
