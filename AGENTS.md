@@ -45,7 +45,8 @@ src/
 │   ├── Student.tsx       # Student view (placeholder — not implemented)
 │   ├── Setting.tsx       # User settings
 │   ├── Access.tsx        # Invitation code management (God only)
-│   ── Language.tsx      # Programming language management (God only)
+│   ├── Language.tsx      # Programming language management (God only)
+│   └── User.tsx          # User management (God only)
 │
 ├── components/
 │   ├── ui/               # shadcn/ui primitives (button, card, sidebar, etc.)
@@ -60,6 +61,8 @@ src/
 │   ├── LanguageTable.tsx
 │   ├── LanguageForm.tsx
 │   ├── InvitationTable.tsx
+│   ├── UserTable.tsx          # User list table (God only)
+│   ├── EditUserModal.tsx      # Edit user modal (role, active, password)
 │   ├── SortableActivityItem.tsx # Draggable activity item
 │   ├── ModeToggle.tsx        # Light/dark theme toggle
 │   ├── theme-provider.tsx
@@ -79,6 +82,7 @@ src/
 │   ├── EditorService.ts      # Code execution endpoint
 │   ├── LanguageService.ts    # Language CRUD
 │   ├── InvitationsService.ts # Invitation code CRUD
+│   ├── UserService.ts        # Profile + password + admin user management
 │   └── TestCaseService.ts    # Test case CRUD
 │
 ├── types/
@@ -88,12 +92,14 @@ src/
 │   │   ├── CreateTestCaseRequest.ts
 │   │   ├── UpdateTestCaseRequest.ts
 │   │   ├── SubmitRequest.ts
+│   │   ├── UpdateUserRequest.ts
 │   │   ── ...
 │   ├── response/         # Response DTOs
 │   │   ├── ActivityResponse.ts  (includes ActivityRulesResponse)
 │   │   ├── TestCase.ts
 │   │   ├── PublicTestCase.ts
 │   │   ├── EvaluationResult.ts
+│   │   ├── UserListItem.ts
 │   │   └── ...
 │   ├── dto/              # General DTOs (InvitationDTO)
 │   ├── enum/             # Constants (ExecutionStatus)
@@ -192,7 +198,7 @@ Use **React Hook Form** with **Zod** validation. Form components (LoginForm, Reg
 
 | Role      | Description                                                       |
 | --------- | ----------------------------------------------------------------- |
-| `God`     | Super admin — full access including language management and invitation codes |
+| `God`     | Super admin — full access including language management, invitation codes and user management |
 | `Teacher` | Professor — manages subjects, activities, students                |
 | `Student` | Student — can register but **no views have been implemented yet** (the `/student` page is a placeholder) |
 
@@ -215,6 +221,7 @@ Use **React Hook Form** with **Zod** validation. Form components (LoginForm, Reg
 | `/setting`                                  | Yes           | —             | User settings (profile info + change password) |
 | `/access`                                   | Yes           | `God`         | Invitation code management |
 | `/language`                                 | Yes           | `God`         | Language management        |
+| `/user`                                     | Yes           | `God`         | User management            |
 | `/403`                                      | —             | —             | Access denied page         |
 
 ---
@@ -416,6 +423,8 @@ When rate-limited, the backend returns **HTTP 429**. The frontend shows a "wait 
 | GET    | `/user/profile`              | Yes      | Get authenticated user profile         |
 | PATCH  | `/user/profile`              | Yes      | Update profile (name, lastName, etc.)  |
 | PATCH  | `/user/password`             | Yes      | Change password                        |
+| GET    | `/user`                      | Yes      | List users, paginated (God only)       |
+| PATCH  | `/user/:id`                  | Yes      | Manage user: password, isActive, role (God only) |
 
 ### Error Response Format
 

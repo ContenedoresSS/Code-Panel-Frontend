@@ -14,6 +14,7 @@ import { ThemeProvider } from './components/theme-provider';
 import { RoleGuard } from './guards/RoleGuard';
 import { ProtectedRoute } from './guards/ProtectedRoute';
 import Language from './pages/Language';
+import User from './pages/User';
 import EmbedEditor from './pages/EmbedEditor';
 import EmbedActivity from './pages/EmbedActivity';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -52,6 +53,7 @@ function App() {
             <Route element={<RoleGuard allowedRole={UserRole.GOD} />}>
               <Route path="access" element={<Access />} />
               <Route path="language" element={<Language/>} />
+              <Route path="user" element={<User />} />
             </Route>
           </Route>
         </Route>
