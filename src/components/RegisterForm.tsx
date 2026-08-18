@@ -14,10 +14,12 @@ import { logger } from "@/lib/logger";
 const formSchema = z.object({
       name: z
       .string()
-      .min(2,"El nombre debe tener amenos 2 caracteres"),
+      .min(2,"El nombre debe tener al menos 2 caracteres")
+      .transform((v) => v.trim().toUpperCase()),
       lastName: z
       .string()
-      .min(2,"El nombre debe tener amenos 2 caracteres"),
+      .min(2,"El apellido debe tener al menos 2 caracteres")
+      .transform((v) => v.trim().toUpperCase()),
       email: z.email("Por favor, ingresa un correo válido."),
       password: z
       .string()
@@ -25,7 +27,8 @@ const formSchema = z.object({
       confirmPassword:z
       .string(),
       identifier: z
-      .string(),
+      .string()
+      .min(1,"Este campo es obligatorio"),
       invitationCode: z
       .string().optional(),
   }).refine((data) => data.password === data.confirmPassword, {
@@ -35,6 +38,7 @@ const formSchema = z.object({
 export function RegisterForm (){
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [role, setRole] = useState<"student" | "teacher">("student");
   const navigate = useNavigate();
   const form = useForm<z.infer<typeof formSchema>>({
       resolver: zodResolver(formSchema),
@@ -48,11 +52,32 @@ export function RegisterForm (){
           invitationCode: "",
       },
   })
+  const esProfesor = role === "teacher";
+  const handleRoleChange = (newRole: "student" | "teacher") => {
+      setRole(newRole);
+      if (newRole === "student") {
+          form.setValue("invitationCode", "");
+      }
+  };
   async function onSubmit (values: z.infer<typeof formSchema>){
       setIsLoading(true);
 
+      if (esProfesor && !values.invitationCode?.trim()) {
+          toast.error("El código de acceso es obligatorio para profesores");
+          setIsLoading(false);
+          return;
+      }
+
       try{
-        await registerUser(values);
+        const payload = {
+          name: values.name,
+          lastName: values.lastName,
+          email: values.email,
+          password: values.password,
+          identifier: values.identifier,
+          invitationCode: esProfesor ? values.invitationCode : undefined,
+        };
+        await registerUser(payload);
 
           toast.success("¡Registro exitoso!");
       
@@ -72,6 +97,22 @@ export function RegisterForm (){
 }
 return(
   <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-w-md mx-auto">
+      <div className="grid grid-cols-2 gap-2">
+          <Button
+            type="button"
+            variant={role === "student" ? "default" : "outline"}
+            onClick={() => handleRoleChange("student")}
+          >
+            Estudiante
+          </Button>
+          <Button
+            type="button"
+            variant={role === "teacher" ? "default" : "outline"}
+            onClick={() => handleRoleChange("teacher")}
+          >
+            Profesor
+          </Button>
+      </div>
       <FieldSet>
           
           <FieldGroup>
@@ -162,27 +203,34 @@ return(
                       )}>
                   </Controller>
               </FieldGroup>  
-              <FieldGroup className="grid max-w-sm grid-cols-2">
+              <FieldGroup className={`grid max-w-sm ${esProfesor ? "grid-cols-2" : "grid-cols-1"}`}>
                   <Controller
                   name="identifier"
                   control={form.control}
                   render={({field})=>(
                       <Field>
-                          <FieldLabel htmlFor="identifier">Clave del trabajador</FieldLabel>
-                          <Input {...field}  id="identifier" autoComplete="off"  placeholder="12346" required/>
+                          <FieldLabel htmlFor="identifier">{esProfesor ? "Clave del trabajador" : "Matrícula"}</FieldLabel>
+                          <Input {...field}  id="identifier" autoComplete="off"  placeholder={esProfesor ? "12346" : "1234567"} required/>
+                          {form.formState.errors.identifier && (
+                              <p className="text-red-500 text-xs mt-1">
+                              {form.formState.errors.identifier.message}
+                              </p>
+                          )}
                       </Field>
                   )}>
                   </Controller>
-                  <Controller
-                  name="invitationCode"
-                  control={form.control}
-                  render={({field})=>(
-                      <Field>
-                          <FieldLabel htmlFor="invitationCode">Código de Acceso</FieldLabel>
-                          <Input {...field} id="invitationCode" autoComplete="off" placeholder="AW34G" />
-                      </Field>
-                      )}>
-                  </Controller>
+                  {esProfesor && (
+                    <Controller
+                    name="invitationCode"
+                    control={form.control}
+                    render={({field})=>(
+                        <Field>
+                            <FieldLabel htmlFor="invitationCode">Código de Acceso</FieldLabel>
+                            <Input {...field} id="invitationCode" autoComplete="off" placeholder="AW34G" required/>
+                        </Field>
+                        )}>
+                    </Controller>
+                  )}
               </FieldGroup>
           </FieldGroup>
   </FieldSet>

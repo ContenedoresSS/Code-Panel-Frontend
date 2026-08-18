@@ -75,6 +75,10 @@ export const interceptorsConfig = (api: AxiosInstance) => {
           description: status,
         });
       } else if (status === 403) {
+        const url = error.config?.url || "";
+        if (url.includes("/auth/")) {
+          return Promise.reject(error);
+        }
         window.location.href = "/dashboard";
         toast.error("Error 403: Acceso denegado", {
           description: status,

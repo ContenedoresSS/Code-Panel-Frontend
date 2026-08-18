@@ -45,9 +45,15 @@ export function LoginForm (){
         }catch (error: any) {
             const status = error.response?.status;
             logger.error("Login error:", error);
-            toast.error(" Credenciales invalidas o Session Expirada", {
-            description:"Error: "+ status + " Por favor verifica tus credenciales",
-            });
+            if (status === 403) {
+              toast.error("Cuenta desactivada", {
+                description: "Tu cuenta ha sido desactivada. Contacta al administrador.",
+              });
+            } else {
+              toast.error(" Credenciales invalidas o Session Expirada", {
+              description:"Error: "+ status + " Por favor verifica tus credenciales",
+              });
+            }
         } finally {
             setIsLoading(false); 
         }
