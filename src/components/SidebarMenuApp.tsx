@@ -12,7 +12,7 @@ import {
   SidebarGroupContent
 } from "@/components/ui/sidebar"
 
-import { LayoutDashboard , User2, Code, Settings, Layers, KeyRound, LogOut, SquareChartGantt } from "lucide-react";
+import { LayoutDashboard , User2, Code, Settings, Layers, KeyRound, LogOut, SquareChartGantt, Users } from "lucide-react";
 import { Link, useNavigate } from "react-router";
 import { UserRole } from "@/types/enum/UserRole";
 
@@ -102,6 +102,16 @@ return(
                   <Link to={"/language"}>
                   <SquareChartGantt />
                   <span>Lenguaje</span>
+                  </Link>
+                  )}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  {user?.role === UserRole.GOD && (
+                  <Link to={"/user"}>
+                  <Users />
+                  <span>Usuarios</span>
                   </Link>
                   )}
                 </SidebarMenuButton>

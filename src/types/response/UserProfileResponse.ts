@@ -4,6 +4,7 @@ export interface UserProfileResponse {
   name: string;
   lastName: string;
   identifier: string | null;
+  isActive?: boolean;
   createdAt: Date;
   role?: {
     id: number;
