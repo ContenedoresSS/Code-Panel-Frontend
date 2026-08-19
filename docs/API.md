@@ -162,6 +162,43 @@ Elimina una materia.
 
 ---
 
+### `POST /subject/:id/duplicate`
+
+Duplica una materia junto con sus actividades y casos de prueba (para un nuevo periodo escolar). No clona inscripciones ni envíos. Solo el profesor propietario (o God) puede duplicarla.
+
+**Body:** `DuplicateSubjectRequest` (opcional)
+```json
+{
+  "name": "Programación Estructurada (copia)"
+}
+```
+
+| Campo  | Tipo   | Requerido | Descripción                                                  |
+| ------ | ------ | :-------: | ------------------------------------------------------------ |
+| `name` | string |    No     | Nombre de la copia (default: `"<original> (copia)"`)        |
+
+**Response:** `DuplicateSubjectResponse`
+```json
+{
+  "subject": {
+    "id": 2,
+    "userId": "uuid-string",
+    "name": "Programación Estructurada (copia)",
+    "imageUrl": null
+  },
+  "activitiesCloned": 3,
+  "testCasesCloned": 12
+}
+```
+
+| Campo               | Tipo   | Descripción                       |
+| ------------------- | ------ | --------------------------------- |
+| `subject`           | object | Materia duplicada creada          |
+| `activitiesCloned`  | number | Cantidad de actividades clonadas  |
+| `testCasesCloned`   | number | Cantidad de casos de prueba clonados |
+
+---
+
 ## Activity (Actividades)
 
 ### `GET /activity`

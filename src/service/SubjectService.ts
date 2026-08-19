@@ -1,5 +1,7 @@
 import api from "@/lib/axios";
 import type { CreateSubjectRequest } from "@/types/request/CreateSubjectRequest";
+import type { DuplicateSubjectRequest } from "@/types/request/DuplicateSubjectRequest";
+import type { DuplicateSubjectResponse } from "@/types/response/DuplicateSubjectResponse";
 import type { SubjectResponse } from "@/types/response/SubjectResponse";
 import type { EnrolledStudent } from "@/types/response/EnrolledStudent";
 
@@ -33,6 +35,17 @@ export const updateSuject = async (
 
 export const getSubjectById = async (id: number): Promise<SubjectResponse> => {
   const response = await api.get<SubjectResponse>(`/subject/${id}`);
+  return response.data;
+};
+
+export const duplicateSubject = async (
+  id: number,
+  subjectData?: DuplicateSubjectRequest
+): Promise<DuplicateSubjectResponse> => {
+  const response = await api.post<DuplicateSubjectResponse>(
+    `/subject/${id}/duplicate`,
+    subjectData
+  );
   return response.data;
 };
 

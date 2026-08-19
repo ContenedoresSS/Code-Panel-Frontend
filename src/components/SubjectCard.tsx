@@ -1,9 +1,4 @@
-import {
-  Card,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -11,7 +6,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreVertical, Edit2, Trash2, ImageIcon } from "lucide-react";
+import { MoreVertical, Edit2, Trash2, Copy, ImageIcon } from "lucide-react";
 import type { SubjectResponse } from "@/types/response/SubjectResponse";
 
 interface CourseCardProps {
@@ -19,18 +14,15 @@ interface CourseCardProps {
   onAction: (id: number | string) => void;
   onEdit: (id: number | string) => void;
   onDelete: (id: number | string) => void;
+  onDuplicate: (id: number | string) => void;
 }
 
-export function CourseCard({ course, onAction, onEdit, onDelete }: CourseCardProps) {
+export function CourseCard({ course, onAction, onEdit, onDelete, onDuplicate }: CourseCardProps) {
   return (
     <Card className="flex flex-col h-full overflow-hidden dark:bg-zinc-900/50 dark:border-zinc-800 shadow-sm">
       {course.imageUrl ? (
         <div className="w-full h-36 bg-muted overflow-hidden">
-          <img
-            src={course.imageUrl}
-            alt={course.name}
-            className="w-full h-full object-cover"
-          />
+          <img src={course.imageUrl} alt={course.name} className="w-full h-full object-cover" />
         </div>
       ) : (
         <div className="w-full h-36 bg-muted flex items-center justify-center">
@@ -54,13 +46,20 @@ export function CourseCard({ course, onAction, onEdit, onDelete }: CourseCardPro
               <span className="sr-only">Opciones</span>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-32">
+          <DropdownMenuContent align="end" className="w-36">
             <DropdownMenuItem
               onClick={() => onEdit(course.id)}
               className="flex items-center gap-2 cursor-pointer"
             >
               <Edit2 className="h-3.5 w-3.5" />
               <span>Editar</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => onDuplicate(course.id)}
+              className="flex items-center gap-2 cursor-pointer"
+            >
+              <Copy className="h-3.5 w-3.5" />
+              <span>Duplicar</span>
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => onDelete(course.id)}

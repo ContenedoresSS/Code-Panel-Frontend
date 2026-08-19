@@ -365,10 +365,17 @@ The test case system has two modes: **teacher management** and **student evaluat
 | **Test** | TestCasesPanel header | Submits solution against all test cases via `/activity/:id/submit` | Consumes 1 attempt |
 | **+ Añadir** | TestCasesPanel header (teacher only) | Opens test case management modal | N/A |
 
+### Subject Duplicate (Teacher/God)
+
+From the subject grid (`Subject.tsx`), the "3 puntitos" dropdown on each `SubjectCard` includes a **"Duplicar"** option (`src/components/SubjectCard.tsx`). It opens `DuplicateSubjectModal.tsx`, which lets the teacher optionally rename the copy (empty → backend default `"<nombre> (copia)"`).
+
+- Calls `POST /subject/:id/duplicate` via `duplicateSubject()` in `src/service/SubjectService.ts`.
+- Clones the subject **with its activities and test cases**; it does **not** clone enrollments or submissions.
+- On success the new subject is prepended to the grid and a toast shows the count of cloned activities and test cases (`DuplicateSubjectResponse`).
+
 ### Subject "Alumnos" View (Teacher)
 
 The global sidebar no longer has an "Alumnos" item. Instead, each subject (`/subject/:id`) is a **layout** (`SubjectLayout.tsx`) with a sub-navigation ("Contenido" / "Alumnos") and nested routes:
-
 - `/subject/:id` → **Contenido** (activity list, `SubjectDetailView.tsx`)
 - `/subject/:id/students` → **Alumnos** (`SubjectStudents.tsx`)
 
@@ -466,6 +473,7 @@ When rate-limited, the backend returns **HTTP 429**. The frontend shows a "wait 
 | GET    | `/subject`                   | Yes      | List subjects (paginated)              |
 | GET    | `/subject/:id`               | Yes      | Get subject by ID                      |
 | POST   | `/subject`                   | Yes      | Create subject                         |
+| POST   | `/subject/:id/duplicate`     | Yes      | Duplicate subject with activities and test cases (Teacher/God) |
 | PUT    | `/subject/:id`               | Yes      | Update subject                         |
 | DELETE | `/subject/:id`               | Yes      | Delete subject                         |
 | GET    | `/activity`                  | Yes      | List all activities                    |
