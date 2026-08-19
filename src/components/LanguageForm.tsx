@@ -10,6 +10,7 @@ import { Field, FieldGroup, FieldLabel, FieldSet } from "./ui/field"
 import { Input } from "./ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card"
 import { logger } from "@/lib/logger"
+import { getErrorMessage } from "@/lib/error.util"
 import type { LanguageResponse } from "@/types/response/LanguageResponse"
 
 const formSchema = z.object({
@@ -78,8 +79,8 @@ export default function LanguageForm({ language, onSuccess, onCancel }: Language
         form.reset();
         onSuccess?.();
       }
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.message || error.message;
+    } catch (error: unknown) {
+      const errorMessage = getErrorMessage(error, "");
 
       if (errorMessage.includes("already exists")) {
         toast.error(`La versión ${values.version} de ${values.name} ya está registrada.`);

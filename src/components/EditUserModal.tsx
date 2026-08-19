@@ -25,6 +25,7 @@ import {
 } from "./ui/select";
 import { Switch } from "./ui/switch";
 import { logger } from "@/lib/logger";
+import { getErrorMessage } from "@/lib/error.util";
 import type { UserListItem } from "@/types/response/UserListItem";
 import type { UpdateUserRequest } from "@/types/request/UpdateUserRequest";
 import { UserRole } from "@/types/enum/UserRole";
@@ -91,12 +92,10 @@ export function EditUserModal({ user, onClose, onSuccess }: EditUserModalProps) 
       const updatedUser = await updateUserAdmin(user.id, payload);
       toast.success("Usuario actualizado correctamente");
       onSuccess(updatedUser);
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error("Update user error:", error);
-      const message = error.response?.data?.error;
-      if (message?.includes("último administrador")) {
-        toast.error(message);
-      } else if (message) {
+      const message = getErrorMessage(error, "");
+      if (message) {
         toast.error(message);
       } else {
         toast.error("Ocurrió un error al actualizar el usuario.");
