@@ -88,13 +88,6 @@ export default function EditorComponent({
   const [isExecuting, setIsExecuting] = useState(false);
   const [attemptCount, setAttemptCount] = useState(0);
 
-  useEffect(() => {
-    if (initialFiles && initialFiles.length > 0) {
-      setFiles(initialFiles);
-      setActiveFileId(initialFiles[0].id);
-    }
-  }, [initialFiles]);
-
   const activeFile = files.find((f) => f.id === activeFileId) ?? files[0];
 
   const language = activeFile?.languageId ?? languages[0]?.id ?? 1;

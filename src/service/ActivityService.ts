@@ -7,6 +7,7 @@ import type { ActivitySummaryResponse } from "@/types/response/ActivitySummaryRe
 import type { EvaluationResult } from "@/types/response/EvaluationResult";
 import type { WorkspaceResponse } from "@/types/response/WorkspaceResponse";
 import type { StudentGrade } from "@/types/response/StudentGrade";
+import type { SubmissionDetail } from "@/types/response/SubmissionDetail";
 
 interface PaginatedResponse<T> {
   data: T[];
@@ -80,4 +81,14 @@ export const getActivitiesTotal = async (): Promise<number> => {
     params: { skip: 0, take: 1 },
   });
   return response.data.totalCount;
+};
+
+export const getSubmissionDetail = async (
+  activityId: string,
+  submissionId: string
+): Promise<SubmissionDetail> => {
+  const response = await api.get<SubmissionDetail>(
+    `/activity/${activityId}/submissions/${submissionId}`
+  );
+  return response.data;
 };
