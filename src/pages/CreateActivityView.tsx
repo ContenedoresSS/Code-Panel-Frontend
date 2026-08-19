@@ -120,6 +120,7 @@ export default function CreateActivityView() {
       isTestCaseModalOpen={isTestCaseModalOpen}
       onOpenTestCaseModal={() => setIsTestCaseModalOpen(true)}
       onCloseTestCaseModal={() => setIsTestCaseModalOpen(false)}
+      activityKey={duplicateId || "new"}
     />
   );
 }

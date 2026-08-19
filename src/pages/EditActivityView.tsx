@@ -139,6 +139,7 @@ export default function EditActivityView() {
       onOpenTestCaseModal={() => setIsTestCaseModalOpen(true)}
       onCloseTestCaseModal={() => setIsTestCaseModalOpen(false)}
       isFullPageLoading={isLoading}
+      activityKey={activityId}
     />
   );
 }

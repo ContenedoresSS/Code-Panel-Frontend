@@ -37,6 +37,8 @@ interface ActivityFormLayoutProps {
   onOpenTestCaseModal: () => void;
   onCloseTestCaseModal: () => void;
   isFullPageLoading?: boolean;
+  /** Identificador usado como key del editor para forzar su remontaje al cargar una actividad. */
+  activityKey?: string;
 }
 
 export function ActivityFormLayout({
@@ -59,6 +61,7 @@ export function ActivityFormLayout({
   onOpenTestCaseModal,
   onCloseTestCaseModal,
   isFullPageLoading,
+  activityKey,
 }: ActivityFormLayoutProps) {
   if (isFullPageLoading) {
     return (
@@ -152,6 +155,7 @@ export function ActivityFormLayout({
             </div>
           ) : (
             <EditorComponent
+              key={activityKey}
               languages={editorLanguages}
               initialFiles={formData.starterCode}
               onChangeFiles={(files) => onFieldChange("starterCode", files)}
