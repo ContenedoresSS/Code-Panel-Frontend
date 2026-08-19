@@ -628,6 +628,42 @@ Elimina un código de invitación.
 
 ---
 
+## Settings (Configuración Global - Solo God)
+
+### `GET /settings/email-domains`
+
+Obtiene la lista de dominios de correo permitidos para el registro.
+
+**Response:** `EmailDomains`
+```json
+{
+  "domains": ["uady.mx", "correo.uady.mx"]
+}
+```
+
+Una lista vacía (`{"domains": []}`) significa que se permiten todos los dominios.
+
+---
+
+### `PUT /settings/email-domains`
+
+Reemplaza por completo la lista de dominios permitidos para el registro.
+
+**Body:** `UpdateEmailDomainsRequest`
+```json
+{
+  "domains": ["uady.mx", "correo.uady.mx"]
+}
+```
+
+| Campo     | Tipo     | Requerido | Descripción                                         |
+| --------- | -------- | :-------: | --------------------------------------------------- |
+| `domains` | string[] |    Sí     | Nuevos dominios permitidos (vacío = todos permitidos) |
+
+**Response:** `EmailDomains` (la lista actualizada)
+
+---
+
 ## Manejo de Errores
 
 El frontend maneja los siguientes códigos HTTP globalmente vía interceptors:
@@ -653,3 +689,4 @@ El frontend maneja los siguientes códigos HTTP globalmente vía interceptors:
 | `/execution/run`            | `src/service/EditorService.ts`  |
 | `/programming-language/*`   | `src/service/LanguageService.ts` |
 | `/invitation/*`             | `src/service/InvitationsService.ts` |
+| `/settings/*`               | `src/service/SettingsService.ts`    |
