@@ -1,5 +1,6 @@
 import { jwtDecode } from "jwt-decode";
 import { toast } from "sonner";
+import { getErrorMessage } from "@/lib/error.util";
 
 const ACCES_TOKEN = "accesToken";
 const REFRESH_TOKEN = "refreshToken";
@@ -50,9 +51,9 @@ export const TokenService = {
         role: tokenDecode.role,
         name: tokenDecode.name,
       };
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.message;
-      toast.error("token invalido", { description: errorMessage });
+    } catch (error: unknown) {
+      const errorMessage = getErrorMessage(error, "");
+      toast.error("token invalido", { description: errorMessage || undefined });
       TokenService.removeTokens();
       return null;
     }

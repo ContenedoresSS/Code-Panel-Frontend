@@ -11,6 +11,7 @@ import { registerUser } from "@/service/AuthService";
 import { useNavigate } from "react-router";
 import { Loader2, Eye, EyeOff } from "lucide-react";
 import { logger } from "@/lib/logger";
+import { getErrorMessage } from "@/lib/error.util";
 const formSchema = z.object({
       name: z
       .string()
@@ -83,9 +84,9 @@ export function RegisterForm (){
       
       navigate("/login")
 
-      }catch (error: any) {
+      }catch (error: unknown) {
 
-      const errorMessage = error.response?.data?.message || "Hubo un error en el servidor";
+      const errorMessage = getErrorMessage(error, "Hubo un error en el servidor");
       logger.error("Register error:", error);
           
           toast.error("Error al registrar", {
@@ -123,6 +124,11 @@ return(
                   <Field >
                       <FieldLabel htmlFor="name">Nombres</FieldLabel>
                       <Input {...field}  id="name" autoComplete="off" placeholder="Tus nombres" required/>
+                      {form.formState.errors.name && (
+                          <p className="text-red-500 text-xs mt-1">
+                          {form.formState.errors.name.message}
+                          </p>
+                      )}
                   </Field>
               )}>
               </Controller>
@@ -133,6 +139,11 @@ return(
                   <Field >
                       <FieldLabel htmlFor="lastName">Apellidos</FieldLabel>
                       <Input {...field}  id="lastName" autoComplete="off" placeholder="Tus Apellidos" required/>
+                      {form.formState.errors.lastName && (
+                          <p className="text-red-500 text-xs mt-1">
+                          {form.formState.errors.lastName.message}
+                          </p>
+                      )}
                   </Field>
               )}>
               </Controller>
@@ -227,6 +238,11 @@ return(
                         <Field>
                             <FieldLabel htmlFor="invitationCode">Código de Acceso</FieldLabel>
                             <Input {...field} id="invitationCode" autoComplete="off" placeholder="AW34G" required/>
+                            {form.formState.errors.invitationCode && (
+                                <p className="text-red-500 text-xs mt-1">
+                                {form.formState.errors.invitationCode.message}
+                                </p>
+                            )}
                         </Field>
                         )}>
                     </Controller>

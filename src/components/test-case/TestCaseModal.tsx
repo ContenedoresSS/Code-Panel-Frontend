@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -21,24 +21,14 @@ interface TestCaseModalProps {
 }
 
 export function TestCaseModal({ open, onClose, onSave, testCase }: TestCaseModalProps) {
-  const [title, setTitle] = useState("");
-  const [input, setInput] = useState("");
-  const [expectedOutput, setExpectedOutput] = useState("");
-  const [isHidden, setIsHidden] = useState(false);
-
-  useEffect(() => {
-    if (testCase) {
-      setTitle(`Caso ${testCase.id}`);
-      setInput(testCase.input ? decodeFromBase64(testCase.input) : "");
-      setExpectedOutput(testCase.expectedOutput ? decodeFromBase64(testCase.expectedOutput) : "");
-      setIsHidden(testCase.isHidden);
-    } else {
-      setTitle("");
-      setInput("");
-      setExpectedOutput("");
-      setIsHidden(false);
-    }
-  }, [testCase, open]);
+  const [title, setTitle] = useState(() => (testCase ? `Caso ${testCase.id}` : ""));
+  const [input, setInput] = useState(() =>
+    testCase?.input ? decodeFromBase64(testCase.input) : ""
+  );
+  const [expectedOutput, setExpectedOutput] = useState(() =>
+    testCase?.expectedOutput ? decodeFromBase64(testCase.expectedOutput) : ""
+  );
+  const [isHidden, setIsHidden] = useState(() => testCase?.isHidden ?? false);
 
   const handleSave = () => {
     if (!title.trim() || !expectedOutput.trim()) return;

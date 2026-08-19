@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2, User, Lock, Mail, Shield, Hash, Eye, EyeOff } from "lucide-react";
 import { getProfile, updateProfile, changePassword } from "@/service/UserService";
-import { useAuth } from "@/assets/context/AuthContext";
+import { useAuth } from "@/assets/context/useAuth";
 import type { UserProfileResponse } from "@/types/response/UserProfileResponse";
 import { logger } from "@/lib/logger";
 

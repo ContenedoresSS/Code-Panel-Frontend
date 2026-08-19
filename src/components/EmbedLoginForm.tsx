@@ -7,7 +7,7 @@ import { Field, FieldGroup, FieldLabel, FieldSet } from "./ui/field";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { loginUser } from "@/service/AuthService";
-import { useAuth } from "@/assets/context/AuthContext";
+import { useAuth } from "@/assets/context/useAuth";
 import { logger } from "@/lib/logger";
 import { Loader2 } from "lucide-react";
 
@@ -40,7 +40,7 @@ export function EmbedLoginForm({ onLoginSuccess }: EmbedLoginFormProps) {
       loginState(data.token, data.refreshToken);
       toast.success("Sesión iniciada correctamente");
       onLoginSuccess?.();
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error("Login error:", error);
       toast.error("Credenciales inválidas", {
         description: "Por favor verifica tus datos e intenta de nuevo.",

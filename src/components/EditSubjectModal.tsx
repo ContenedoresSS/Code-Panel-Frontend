@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -21,24 +21,10 @@ interface EditCourseModalProps {
 }
 
 export function EditSubjecteModal({ isOpen, onClose, onSubmit, course }: EditCourseModalProps) {
-  const [formData, setFormData] = useState<CreateSubjectRequest>({
-    name: "",
-    imageUrl: "",
-  });
-
-  useEffect(() => {
-    if (course) {
-      setFormData({
-        name: course.name,
-        imageUrl: course.imageUrl || "",
-      });
-    } else {
-      setFormData({
-        name: "",
-        imageUrl: "",
-      });
-    }
-  }, [course]);
+  const [formData, setFormData] = useState<CreateSubjectRequest>(() => ({
+    name: course?.name ?? "",
+    imageUrl: course?.imageUrl ?? "",
+  }));
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
