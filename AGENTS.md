@@ -36,13 +36,16 @@ src/
 │   ├── EmbedActivity.tsx  # Embedded activity editor (iframe in Moodle, per-activity)
 │   ├── Login.tsx         # Login page
 │   ├── Register.tsx      # Registration page
-│   ├── Dashboard.tsx     # Main dashboard (overview)
+│   ├── Dashboard.tsx     # Main dashboard (overview, real data by role)
 │   ├── DashboardLayout.tsx # Authenticated layout with sidebar
 │   ├── Subject.tsx       # Course/subject listing & CRUD
-│   ├── SubjectDetailView.tsx  # Activities within a subject
+│   ├── SubjectLayout.tsx # Subject layout with sub-nav (Contenido / Alumnos) + Outlet
+│   ├── SubjectDetailView.tsx  # "Contenido" of a subject (activities list, dnd)
+│   ├── SubjectStudents.tsx    # "Alumnos" of a subject (teacher grade view)
 │   ├── CreateActivityView.tsx # Create new activity
 │   ├── EditActivityView.tsx   # Edit existing activity
 │   ├── Student.tsx       # Student view (placeholder — not implemented)
+│   ├── RecoverPassword.tsx # 3-step password recovery wizard
 │   ├── Setting.tsx       # User settings
 │   ├── Access.tsx        # Invitation code management (God only)
 │   ├── Language.tsx      # Programming language management (God only)
@@ -50,7 +53,14 @@ src/
 │
 ├── components/
 │   ├── ui/               # shadcn/ui primitives (button, card, sidebar, etc.)
-│   ├── EditorComponent.tsx   # Monaco-based code editor with output panel
+│   ├── editor/           # Editor subcomponents
+│   │   ├── EditorToolbar.tsx  # Toolbar (upload, download, font, theme, language)
+│   │   ├── EditorPane.tsx     # Monaco editor pane
+│   │   ├── FileTabs.tsx       # File tabs (add, close, rename, entry-point marker)
+│   │   ├── OutputPanel.tsx
+│   │   ├── InputPanel.tsx
+│   │   └── TestCasesPanel.tsx
+│   ├── EditorComponent.tsx   # Monaco-based multi-file code editor + output panel
 │   ├── SidebarMenuApp.tsx    # Main sidebar navigation
 │   ├── SubjectCard.tsx       # Subject/course card in grid
 │   ├── CreateSubjectModal.tsx
@@ -71,17 +81,18 @@ src/
 │       ├── TestCaseModal.tsx            # Create/edit single test case
 │       ├── TestCaseList.tsx             # List of test cases
 │       ├── TestCaseManager.tsx          # Button to open management modal
-│       ├── TestCaseManagementModal.tsx  # Full management modal with simulation
+│       ├── TestCaseManagementModal.tsx  # Full management modal with multi-file simulation
 │       ── TestSimulationResult.tsx     # Simulation results display
 │
 ├── service/              # API service layer (one file per resource)
-│   ├── AuthService.ts        # login, register, refreshSession
+│   ├── AuthService.ts        # login, register, refreshSession, password recovery
 │   ├── TokenService.ts       # JWT management (localStorage)
-│   ├── SubjectService.ts     # Subject CRUD
-│   ├── ActivityService.ts    # Activity CRUD + submitSolution
-│   ├── EditorService.ts      # Code execution endpoint
+│   ├── SubjectService.ts     # Subject CRUD + students
+│   ├── ActivityService.ts    # Activity CRUD + submitSolution + grades
+│   ├── EditorService.ts      # Code execution (run + run-with-files)
+│   ├── EnrollmentService.ts  # Student enrollments
 │   ├── LanguageService.ts    # Language CRUD
-│   ├── InvitationsService.ts # Invitation code CRUD
+│   ├── InvitationsService.ts # Invitation code CRUD (paginated)
 │   ├── UserService.ts        # Profile + password + admin user management
 │   └── TestCaseService.ts    # Test case CRUD
 │
@@ -93,6 +104,10 @@ src/
 │   │   ├── UpdateTestCaseRequest.ts
 │   │   ├── SubmitRequest.ts
 │   │   ├── UpdateUserRequest.ts
+│   │   ├── ForgotPasswordRequest.ts
+│   │   ├── VerifyResetCodeRequest.ts
+│   │   ├── ResetPasswordRequest.ts
+│   │   ├── EditorExecutionRequest.ts  (includes RunCodeWithFilesRequest)
 │   │   ── ...
 │   ├── response/         # Response DTOs
 │   │   ├── ActivityResponse.ts  (includes ActivityRulesResponse)
@@ -100,16 +115,24 @@ src/
 │   │   ├── PublicTestCase.ts
 │   │   ├── EvaluationResult.ts
 │   │   ├── UserListItem.ts
+│   │   ├── EnrolledStudent.ts
+│   │   ├── StudentGrade.ts
+│   │   ├── StudentSubmission.ts
+│   │   ├── MessageResponse.ts
+│   │   ├── VerifyResetCodeResponse.ts
 │   │   └── ...
 │   ├── dto/              # General DTOs (InvitationDTO)
 │   ├── enum/             # Constants (ExecutionStatus)
-│   ├── EditorProps.ts    # EditorLanguage, EditorCodeFile
+│   ├── EditorProps.ts    # EditorLanguage, EditorFile
 │   ├── CourseProps.ts    # Course/subject type
 │   └── CodeFile.ts
 │
 ├── lib/
 │   ├── axios.ts             # Axios instance (baseURL config)
 │   ├── interceptorsConfig.ts # JWT attach, refresh token, error handling
+│   ├── activity-form-utils.ts # Shared activity form logic
+│   ├── editor-files.util.ts  # EditorFile[] <-> CodeFile[] conversion
+│   ├── error.util.ts         # Axios error helpers (status, message)
 │   └── utils.ts             # shadcn cn() utility
 │
 ├── guards/
@@ -118,7 +141,9 @@ src/
 │
 ├── assets/
 │   └── context/
-│       └── AuthContext.tsx   # React context for auth state (user, loginState, logoutState)
+│       ├── auth-context.ts   # AuthContext + User/AuthContextType types
+│       ├── AuthProvider.tsx  # AuthProvider component
+│       └── useAuth.ts        # useAuth hook
 │
 ├── utils/
 │   └── base64.util.ts       # encodeToBase64 / decodeFromBase64 (UTF-8 safe)
@@ -165,7 +190,11 @@ src/
 ### Authentication
 
 - JWT-based with access + refresh tokens stored in `localStorage`.
-- `AuthContext` provides `user`, `isAuthenticated`, `isLoading`, `loginState()`, `logoutState()`.
+- The auth context is split across three files under `src/assets/context/`:
+  - `auth-context.ts` — the `AuthContext` object + `User`/`AuthContextType` types.
+  - `AuthProvider.tsx` — the `AuthProvider` component (lazy-initializes user from the JWT).
+  - `useAuth.ts` — the `useAuth()` hook.
+- `useAuth()` provides `user`, `isAuthenticated`, `isLoading`, `loginState()`, `logoutState()`, `updateUserName()`.
 - `ProtectedRoute` wraps authenticated routes. `RoleGuard` further restricts by user role.
 
 ### Services
@@ -186,9 +215,9 @@ Use **React Hook Form** with **Zod** validation. Form components (LoginForm, Reg
 
 ### Code Execution Flow
 
-1. User writes code in the Monaco Editor (`EditorComponent`).
+1. User writes code in the Monaco Editor (`EditorComponent`), which now supports **multiple files** (tabs in `FileTabs.tsx`).
 2. On "Run", the code and stdin are encoded to **Base64** (UTF-8 safe via `TextEncoder`).
-3. A POST request is sent to `/api/v1/execution/run` with `{ languageId, code, stdin }`.
+3. A POST request is sent to `/api/v1/execution/run` (single file) or `/api/v1/execution/run-with-files` (multiple files, with the **first file** as `entryPoint`).
 4. The response includes `status` (one of the execution statuses below), `stdout`, `stderr`, and `timeMs`.
 5. The output panel renders the result with appropriate formatting for each status.
 
@@ -199,7 +228,7 @@ Use **React Hook Form** with **Zod** validation. Form components (LoginForm, Reg
 | Role      | Description                                                       |
 | --------- | ----------------------------------------------------------------- |
 | `God`     | Super admin — full access including language management, invitation codes and user management |
-| `Teacher` | Professor — manages subjects, activities, students                |
+| `Teacher` | Professor — manages subjects, activities, students (including per-activity grades in `/subject/:id/students`) |
 | `Student` | Student — can register but **no views have been implemented yet** (the `/student` page is a placeholder) |
 
 ---
@@ -214,7 +243,8 @@ Use **React Hook Form** with **Zod** validation. Form components (LoginForm, Reg
 | `/embed/activity/:activityId`              | No            | —             | Embedded activity editor with workspace + restrictions |
 | `/dashboard`                                | Yes           | —             | Main dashboard             |
 | `/course`                                   | Yes           | —             | Subject listing            |
-| `/subject/:id`                              | Yes           | —             | Subject detail with activities |
+| `/subject/:id`                              | Yes           | —             | Subject layout with sub-nav (Contenido / Alumnos) + Outlet |
+| `/subject/:id/students`                     | Yes           | —             | "Alumnos" of a subject — teacher grade view (drill-down) |
 | `/subject/:id/activity/new`                 | Yes           | —             | Create new activity        |
 | `/subject/:id/activity/:activityId/edit`    | Yes           | —             | Edit existing activity     |
 | `/student`                                  | Yes           | —             | Student list (placeholder) |
@@ -287,8 +317,17 @@ Teachers can configure the following restrictions per activity. These flow from 
 
 ### Editor File Upload/Download
 
-- **Upload:** Hidden `<input type="file">` triggered by button click. Reads file content via `FileReader` and loads into Monaco.
-- **Download:** Creates a `Blob` from the editor code and triggers download via a temporary `<a>` element. File extension comes from `LanguageResponse.fileExtension` (not a hardcoded map).
+- **Upload:** Hidden `<input type="file">` triggered by button click. Reads file content via `FileReader` and loads into the **active file** in Monaco.
+- **Download:** Creates a `Blob` from the active file's code and triggers download via a temporary `<a>` element. File extension comes from `LanguageResponse.fileExtension` (not a hardcoded map).
+
+### Multi-file Editor
+
+`EditorComponent` now manages an array of `EditorFile` (`{ id, nameFile, code, languageId }`) plus an `activeFileId`:
+
+- **Tabs** (`src/components/editor/FileTabs.tsx`) allow: selecting a file, closing it (only if more than one), adding a new file (`+`), and **renaming** via double-click on the tab (inline input with validation against empty/duplicate names).
+- The **first file** in the list is the **entry point**: it is used as `entryPoint` for `/execution/run-with-files` and, because the backend submit uses `files[0]` as the entry, it is also the entry on submit. It is marked with a ▶ indicator on its tab. New files default to `main.<ext>` (first) / `archivo<N>.<ext>` (subsequent).
+- `src/lib/editor-files.util.ts` exports `toCodeFiles(EditorFile[]): CodeFile[]` to build submit/run payloads.
+- The teacher activity form (`ActivityFormLayout` + `activity-form-utils.ts`) stores `starterCode` as an `EditorFile[]` list, decodes **all** workspace files on edit/duplicate, and builds the `CodeFile[]` payload on save.
 
 ### Language Editing
 
@@ -305,7 +344,7 @@ The test case system has two modes: **teacher management** and **student evaluat
 1. Teacher clicks "Gestionar casos de prueba" button in the left sidebar
 2. Modal opens with full CRUD management (create, edit, delete)
 3. Each test case has: input (Base64), expected output (Base64), and isHidden flag
-4. "Ejecutar tests" button simulates all test cases against current code (uses `/execution/run`, no intent consumption)
+4. "Ejecutar tests" button simulates all test cases against current code (uses `/execution/run-with-files` with all editor files, no intent consumption)
 5. Test cases are stored 100% offline during editing — only synced to backend when saving the activity
 6. New test cases get temporary negative IDs (`-1`, `-2`, ...) during editing
 7. On save: new (ID < 0) → create, modified (ID > 0 with changes) → update, removed → delete
@@ -321,9 +360,24 @@ The test case system has two modes: **teacher management** and **student evaluat
 
 | Button | Location | Behavior | Attempts |
 | ------ | -------- | -------- | -------- |
-| **Run** | OutputPanel header | Executes code with user-provided stdin via `/execution/run` | No limit |
+| **Run** | OutputPanel header | Executes code with user-provided stdin via `/execution/run` (single file) or `/execution/run-with-files` (multi-file) | No limit |
 | **Test** | TestCasesPanel header | Submits solution against all test cases via `/activity/:id/submit` | Consumes 1 attempt |
 | **+ Añadir** | TestCasesPanel header (teacher only) | Opens test case management modal | N/A |
+
+### Subject "Alumnos" View (Teacher)
+
+The global sidebar no longer has an "Alumnos" item. Instead, each subject (`/subject/:id`) is a **layout** (`SubjectLayout.tsx`) with a sub-navigation ("Contenido" / "Alumnos") and nested routes:
+
+- `/subject/:id` → **Contenido** (activity list, `SubjectDetailView.tsx`)
+- `/subject/:id/students` → **Alumnos** (`SubjectStudents.tsx`)
+
+`SubjectStudents.tsx` is a **drill-down view** for teachers:
+1. Loads enrolled students (`GET /subject/:id/students`) and the subject's activities (`GET /activity` filtered by subject).
+2. For each activity, loads its grades (`GET /activity/:id/grades`).
+3. Each student row expands to show their **calificación por actividad** (best score), number of attempts, and further expands per activity to show the **submission history** (fecha, hora, estado, passedTests/totalTests, executionTimeMs).
+4. Filters: text search (name, email, matrícula) and a dropdown to filter by activity.
+
+> **Note:** The backend currently exposes grades only per-activity (`GET /activity/:id/grades`), not aggregated by subject. The view fetches grades per activity. A backend endpoint for "grades by subject" is a pending improvement.
 
 ---
 
@@ -353,6 +407,17 @@ Token lifetimes:
 - Refresh token: **7 days**
 
 The Axios interceptor (`src/lib/interceptorsConfig.ts`) handles automatic token attachment and refresh on 401.
+
+### Password Recovery (no auth)
+
+Implemented in `src/pages/RecoverPassword.tsx` as a 3-step wizard (request code → verify code → new password):
+1. **POST `/auth/forgot-password`** — `{ email }` → `{ message }`. Sends a 6-digit code by email. Response is identical whether or not the email exists (anti-enumeration), so the UI must not reveal account existence. Returns 500 if no email provider is configured.
+2. **POST `/auth/verify-reset-code`** — `{ email, code }` → `{ resetToken }`. The `resetToken` is a JWT valid for 15 minutes.
+3. **POST `/auth/reset-password`** — `{ resetToken, newPassword }` → `{ message }`.
+
+Notes:
+- The `resetToken` is held in component state only (never persisted to `localStorage`).
+- `min` 8 chars for the new password, confirm field must match (Zod `refine`).
 
 ### Base64 Encoding
 
@@ -394,6 +459,9 @@ When rate-limited, the backend returns **HTTP 429**. The frontend shows a "wait 
 | POST   | `/auth/login`                | No       | Login                                  |
 | POST   | `/auth/register`             | No       | Registration                           |
 | POST   | `/auth/refreshSession`       | No       | Refresh token pair                     |
+| POST   | `/auth/forgot-password`      | No       | Send password reset code by email      |
+| POST   | `/auth/verify-reset-code`    | No       | Verify reset code, issue reset token   |
+| POST   | `/auth/reset-password`       | No       | Set new password with reset token      |
 | GET    | `/subject`                   | Yes      | List subjects (paginated)              |
 | GET    | `/subject/:id`               | Yes      | Get subject by ID                      |
 | POST   | `/subject`                   | Yes      | Create subject                         |
@@ -406,6 +474,11 @@ When rate-limited, the backend returns **HTTP 429**. The frontend shows a "wait 
 | DELETE | `/activity/:id`              | Yes      | Delete activity                        |
 | GET    | `/activity/:id/workspace`    | No       | Public workspace for embedded editor   |
 | POST   | `/activity/:id/submit`       | Optional | Submit solution for evaluation         |
+| GET    | `/activity/:id/grades`       | Yes      | Per-activity student grades (Teacher/God) |
+| GET    | `/subject/:id/students`      | Yes      | Enrolled students of a subject (Teacher/God) |
+| POST   | `/enrollment`                | Yes      | Enroll a student in a subject          |
+| GET    | `/enrollment`                | Yes      | List enrollments (Student/Teacher/God) |
+| DELETE | `/enrollment/:id`            | Yes      | Remove an enrollment                   |
 | GET    | `/activity/:id/test-case`    | Yes      | List test cases (Teacher only)         |
 | POST   | `/activity/:id/test-case`    | Yes      | Create test case (Teacher only)        |
 | PUT    | `/activity/:id/test-case/:id`| Yes      | Update test case (Teacher only)        |
@@ -452,7 +525,8 @@ HTTP codes and their handling (via Axios interceptors):
 | `/subject/*`                | `src/service/SubjectService.ts`  |
 | `/activity/*`               | `src/service/ActivityService.ts` |
 | `/activity/:id/test-case/*` | `src/service/TestCaseService.ts` |
-| `/execution/run`            | `src/service/EditorService.ts`   |
+| `/execution/run`, `/execution/run-with-files` | `src/service/EditorService.ts` |
+| `/enrollment/*`             | `src/service/EnrollmentService.ts` |
 | `/programming-language/*`   | `src/service/LanguageService.ts` |
 | `/invitation/*`             | `src/service/InvitationsService.ts` |
 | `/user/*`                   | `src/service/UserService.ts`        |
@@ -468,7 +542,7 @@ The `/setting` page (`src/pages/Setting.tsx`) provides two sections:
 - Editable fields: **name**, **lastName**
 - Read-only fields: **email**, **identifier**, **role** (shown as badge)
 - Saved via `PATCH /user/profile` — only changed fields are sent
-- On success, `AuthContext.updateUserName()` refreshes the name in the sidebar in real time
+- On success, `useAuth().updateUserName()` refreshes the name in the sidebar in real time
 
 ### Change Password
 - Form with 3 fields: current password, new password, confirm password
@@ -478,3 +552,22 @@ The `/setting` page (`src/pages/Setting.tsx`) provides two sections:
 - On HTTP 401, shows "La contraseña actual es incorrecta"
 
 Both forms use React Hook Form + Zod (same pattern as `LoginForm`).
+
+---
+
+## Pending Work
+
+### Backend / Deployment
+- **Server is currently unreachable** — `https://codepanel.orchfr.duckdns.org` (IP `139.177.97.29`) times out on `/api/health`, `/api/v1` and `/`. DNS resolves but the VPS/containers are not responding. Needs VPS access to diagnose (Docker, Nginx, ports) and restart services. Until resolved, no data loads in the frontend.
+- **Grades aggregated by subject** — the backend exposes grades only per-activity (`GET /activity/:id/grades`). The "Alumnos" view (`SubjectStudents.tsx`) fetches grades per activity and combines them client-side. A backend endpoint for "grades by subject" would simplify this (requested, pending).
+- **Student enrollment flow** — the `/enrollment` endpoints exist but the Student UI (self-enroll, list own enrollments) is not built. The Dashboard shows "Mis Materias" for Student via `GET /enrollment`, but the full student flow is pending.
+
+### Frontend
+- **Anonymous access in the iframe** — plan approved: add a "Continuar sin iniciar sesión" (guest) button to `EmbedLoginForm.tsx` so `EmbedActivity` can load the public workspace and submit anonymously (`saved: false`). Not yet implemented.
+- **Block Student login on the main platform** — the Student role should only log in inside the iframe, not on the main web app (they share `localStorage`). Approach (detect iframe + role guard) was discussed but left pending.
+- **Interceptor bug** — `src/lib/interceptorsConfig.ts:28` accesses `error.response.status` without guarding for network errors (timeout/offline), which crashes the whole app when the backend is unreachable. Fix: add `if (!error.response) return Promise.reject(error)` at the start of the refresh-token error handler (mirroring the safe pattern at line 62).
+
+### Deuda técnica / Quality
+- No automated tests configured (see `TECHNICAL_DEBT.md`).
+- Lint debt reduced to **0 errors**; only 4 `react-refresh/only-export-components` warnings remain on shadcn/ui primitives (`badge`, `button`, `sidebar`, `theme-provider`) that intentionally export cva variants/helpers.
+- Architectural debt (domain separation, dependency injection, repository layer, caching) documented in `TECHNICAL_DEBT.md`.

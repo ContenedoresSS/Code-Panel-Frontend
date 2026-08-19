@@ -1,9 +1,9 @@
 import type { LanguageResponse } from "@/types/response/LanguageResponse";
-import type { EditorLanguage } from "@/types/EditorProps";
+import type { EditorFile, EditorLanguage } from "@/types/EditorProps";
 import type { ActivityResponse } from "@/types/response/ActivityResponse";
 import type { ActivityRules } from "@/types/request/CreateActivityRequest";
-import { decodeFromBase64, encodeToBase64 } from "@/utils/base64.util";
-import { logger } from "@/lib/logger";
+import { decodeFromBase64 } from "@/utils/base64.util";
+import { toCodeFiles } from "@/lib/editor-files.util";
 
 export interface ActivityFormData {
   title: string;
@@ -16,7 +16,7 @@ export interface ActivityFormData {
   allowLanguageChange: boolean;
   allowUpload: boolean;
   allowDownload: boolean;
-  starterCode: string;
+  starterCode: EditorFile[];
 }
 
 export const DEFAULT_FORM_DATA: ActivityFormData = {
@@ -30,7 +30,7 @@ export const DEFAULT_FORM_DATA: ActivityFormData = {
   allowLanguageChange: true,
   allowUpload: true,
   allowDownload: true,
-  starterCode: "",
+  starterCode: [],
 };
 
 export function mapApiLanguagesToEditorLanguages(languages: LanguageResponse[]): EditorLanguage[] {
@@ -42,14 +42,16 @@ export function mapApiLanguagesToEditorLanguages(languages: LanguageResponse[]):
   }));
 }
 
-export function extractStarterCode(activity: ActivityResponse): string {
-  if (!activity.starterCode || activity.starterCode.length === 0) return "";
-  try {
-    return decodeFromBase64(activity.starterCode[0].content);
-  } catch (e) {
-    logger.error("Error decodificando starterCode:", e);
-    return "";
-  }
+export function extractStarterFiles(activity: ActivityResponse): EditorFile[] {
+  if (!activity.starterCode || activity.starterCode.length === 0) return [];
+  return activity.starterCode
+    .map((file, index) => ({
+      id: String(index + 1),
+      nameFile: file.name,
+      code: decodeFromBase64(file.content),
+      languageId: activity.languageId,
+    }))
+    .filter((file) => file.code !== "");
 }
 
 export function populateFormFromActivity(activity: ActivityResponse): ActivityFormData {
@@ -64,7 +66,7 @@ export function populateFormFromActivity(activity: ActivityResponse): ActivityFo
     allowLanguageChange: activity.rules.allowLanguageChange,
     allowUpload: activity.rules.allowFileUpload,
     allowDownload: activity.rules.allowFileDownload,
-    starterCode: extractStarterCode(activity),
+    starterCode: extractStarterFiles(activity),
   };
 }
 
@@ -79,8 +81,8 @@ function buildActivityRules(formData: ActivityFormData): ActivityRules {
   };
 }
 
-function buildStarterCode(code: string) {
-  return code ? [{ name: "main", content: encodeToBase64(code) }] : undefined;
+function buildStarterCode(files: EditorFile[]) {
+  return files.length > 0 ? toCodeFiles(files) : undefined;
 }
 
 export function buildActivityPayload(formData: ActivityFormData) {

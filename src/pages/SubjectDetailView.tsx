@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router"; // <-- Corregido: react-router-dom
-import { 
-  DndContext, 
+import { useParams, useNavigate, useOutletContext } from "react-router";
+import {
+  DndContext,
   closestCenter,
   KeyboardSensor,
   PointerSensor,
@@ -9,7 +9,7 @@ import {
   useSensors,
   type DragEndEvent
 } from '@dnd-kit/core';
-import { 
+import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
@@ -17,23 +17,11 @@ import {
 } from '@dnd-kit/sortable';
 
 import { SortableActivityItem } from "@/components/SortableActivityItem";
-import { type SubjectResponse } from "@/types/response/SubjectResponse";
-
-// <-- FALTABAN ESTOS IMPORTS -->
+import type { SubjectResponse } from "@/types/response/SubjectResponse";
 import type { ActivitySummaryResponse } from "@/types/response/ActivitySummaryResponse";
-import { deleteActivity, getActivitiesBySubject } from "@/service/ActivityService"; 
-
-import { 
-  Breadcrumb, 
-  BreadcrumbItem, 
-  BreadcrumbLink, 
-  BreadcrumbList, 
-  BreadcrumbPage, 
-  BreadcrumbSeparator 
-} from "@/components/ui/breadcrumb";
+import { deleteActivity, getActivitiesBySubject } from "@/service/ActivityService";
 import { Button } from "@/components/ui/button";
 import { Plus, Loader2 } from "lucide-react";
-import { getSubjectById } from "@/service/SubjectService";
 import { toast } from "sonner";
 import { logger } from "@/lib/logger";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -41,37 +29,29 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 export default function SubjectDetailView() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { subject } = useOutletContext<{ subject: SubjectResponse }>();
 
-  const [subject, setSubject] = useState<SubjectResponse | null>(null);
-  const [activities, setActivities] = useState<ActivitySummaryResponse[]>([]); 
+  const [activities, setActivities] = useState<ActivitySummaryResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [deleteActivityId, setDeleteActivityId] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchSubjectAndActivities = async () => {
+    const fetchActivities = async () => {
       if (!id) return;
-      const subjectId = Number(id);
       try {
         setIsLoading(true);
-        const [subjectData, activitiesData] = await Promise.all([
-          getSubjectById(subjectId),
-          getActivitiesBySubject(id) 
-        ]);
-
-        setSubject(subjectData);
-        setActivities(activitiesData);
+        setActivities(await getActivitiesBySubject(id));
       } catch (error) {
         logger.error("Error al cargar la información:", error);
-        navigate("/dashboard")
+        navigate("/dashboard");
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchSubjectAndActivities();
+    fetchActivities();
   }, [id, navigate]);
 
-  // --- CONFIGURACIÓN DRAG & DROP ---
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
@@ -89,7 +69,6 @@ export default function SubjectDetailView() {
     }
   };
 
-  // --- HANDLERS ---
   const handleEditActivity = (activityId: string) => {
     navigate(`/subject/${id}/activity/${activityId}/edit`);
   };
@@ -115,11 +94,9 @@ export default function SubjectDetailView() {
     navigate(`/subject/${id}/activity/new?duplicate=${activityId}`);
   };
 
-
-  // --- RENDER ---
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-[calc(100vh-100px)]">
+      <div className="flex justify-center items-center h-[calc(100vh-300px)]">
         <Loader2 className="w-10 h-10 animate-spin text-primary" />
       </div>
     );
@@ -128,30 +105,10 @@ export default function SubjectDetailView() {
   if (!subject) return null;
 
   return (
-    <div className="container max-w-5xl mx-auto px-4 py-8">
-      
-      {/* Migas de pan */}
-      <Breadcrumb className="mb-6">
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink href="/course">Cursos</BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>{subject.name}</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
-
-      {/* Encabezado */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">{subject.name}</h1>
-          <p className="text-muted-foreground mt-1 text-sm">Gestiona el contenido y las actividades de esta materia.</p>
-        </div>
-        
-        {/* <-- CORREGIDO: Agregamos el onClick para navegar a la nueva vista de creación */}
-        <Button 
+    <div>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <p className="text-muted-foreground mt-1 text-sm">Gestiona el contenido y las actividades de esta materia.</p>
+        <Button
           className="flex items-center gap-2"
           onClick={() => navigate(`/subject/${id}/activity/new`)}
         >
@@ -160,27 +117,26 @@ export default function SubjectDetailView() {
         </Button>
       </div>
 
-      {/* Lista de Actividades Arrastrables */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4 border-b border-border pb-2">
           <h2 className="text-xl font-semibold text-foreground">Contenido del Curso</h2>
         </div>
 
         {activities.length > 0 ? (
-          <DndContext 
+          <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
             onDragEnd={handleDragEnd}
           >
-            <SortableContext 
+            <SortableContext
               items={activities.map(a => a.id)}
               strategy={verticalListSortingStrategy}
             >
               <div className="flex flex-col">
                 {activities.map((activity) => (
-                  <SortableActivityItem 
-                    key={activity.id} 
-                    activity={activity} 
+                  <SortableActivityItem
+                    key={activity.id}
+                    activity={activity}
                     onEdit={handleEditActivity}
                     onDelete={handleDeleteActivity}
                     onDuplicate={handleDuplicateActivity}
@@ -203,7 +159,6 @@ export default function SubjectDetailView() {
         description="¿Estás seguro de que deseas eliminar esta actividad? Esta acción no se puede deshacer."
         onConfirm={confirmDeleteActivity}
       />
-
     </div>
   );
 }

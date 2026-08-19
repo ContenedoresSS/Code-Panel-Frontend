@@ -3,11 +3,12 @@ import { useParams } from "react-router";
 import { Loader2 } from "lucide-react";
 import EditorComponent from "@/components/EditorComponent";
 import { EmbedLoginForm } from "@/components/EmbedLoginForm";
-import { useAuth } from "@/assets/context/AuthContext";
+import { useAuth } from "@/assets/context/useAuth";
 import { getWorkspace, submitSolution } from "@/service/ActivityService";
 import { getAllLanguages } from "@/service/LanguageService";
-import { decodeFromBase64, encodeToBase64 } from "@/utils/base64.util";
-import type { EditorCodeFile, EditorLanguage } from "@/types/EditorProps";
+import { decodeFromBase64 } from "@/utils/base64.util";
+import type { EditorFile, EditorLanguage } from "@/types/EditorProps";
+import type { CodeFile } from "@/types/CodeFile";
 import type { WorkspaceResponse } from "@/types/response/WorkspaceResponse";
 import type { EvaluationResult } from "@/types/response/EvaluationResult";
 import { logger } from "@/lib/logger";
@@ -36,16 +37,15 @@ export default function EmbedActivity() {
     };
   }, [workspace, allLanguages]);
 
-  const initialCode: EditorCodeFile | undefined = useMemo(() => {
+  const initialFiles: EditorFile[] | undefined = useMemo(() => {
     if (!workspace?.starterCode || workspace.starterCode.length === 0) return undefined;
     try {
-      const decodedContent = decodeFromBase64(workspace.starterCode[0].content);
-      return {
-        id: "1",
-        nameFile: workspace.starterCode[0].name,
-        code: decodedContent,
+      return workspace.starterCode.map((file, index) => ({
+        id: String(index + 1),
+        nameFile: file.name,
+        code: decodeFromBase64(file.content),
         languageId: workspace.language.id,
-      };
+      }));
     } catch (e) {
       logger.error("Error decodificando starterCode:", e);
       return undefined;
@@ -81,14 +81,14 @@ export default function EmbedActivity() {
       .finally(() => setIsLoadingWorkspace(false));
   }, [isAuthenticated, activityId]);
 
-  const handleSubmit = async (code: string, languageId: number) => {
+  const handleSubmit = async (files: CodeFile[], languageId: number) => {
     if (!activityId) return;
     setIsSubmitting(true);
     setEvaluationResult(null);
 
     try {
       const result = await submitSolution(activityId, {
-        files: [{ name: "main", content: encodeToBase64(code) }],
+        files,
         languageId,
       });
       setEvaluationResult(result);
@@ -152,7 +152,7 @@ export default function EmbedActivity() {
       <div className="flex-1 min-h-0">
         <EditorComponent
           languages={workspace.rules.allowLanguageChange ? allLanguages : [editorLanguage]}
-          initialCode={initialCode}
+          initialFiles={initialFiles}
           disableCopy={!workspace.rules.allowCopy}
           disablePaste={!workspace.rules.allowPaste}
           disableEdit={!workspace.rules.allowCodeEdit}

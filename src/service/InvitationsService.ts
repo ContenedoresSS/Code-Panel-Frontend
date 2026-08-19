@@ -14,10 +14,10 @@ export const getAllInvitations = async (
   page: number = 1,
   limit: number = 10
 ): Promise<PaginatedInvitationResponse> => {
-  const response = await api.get("/invitation", {
+  const response = await api.get<PaginatedInvitationResponse>("/invitation", {
     params: { page, limit },
   });
-  return response.data.data;
+  return response.data;
 };
 
 export const createInvitation = async (data: CreateInvitationDTO): Promise<InvitationDTO> => {

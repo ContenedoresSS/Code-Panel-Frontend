@@ -19,6 +19,8 @@ import EmbedEditor from './pages/EmbedEditor';
 import EmbedActivity from './pages/EmbedActivity';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import SubjectDetailView from './pages/SubjectDetailView';
+import SubjectLayout from './pages/SubjectLayout';
+import SubjectStudents from './pages/SubjectStudents';
 import CreateActivityView from './pages/CreateActivityView';
 import EditActivityView from './pages/EditActivityView';
 import Subject from './pages/Subject';
@@ -46,9 +48,12 @@ function App() {
             <Route path="setting" element={<Setting />} />
             <Route path="student" element={<Student/>} />
             <Route path="course" element={<Subject/>} />
-              <Route path="/subject/:id" element={<SubjectDetailView />} />
-              <Route path="/subject/:id/activity/new" element={<CreateActivityView />} />
-              <Route path="/subject/:id/activity/:activityId/edit" element={<EditActivityView />} />
+              <Route path="/subject/:id" element={<SubjectLayout />}>
+                <Route index element={<SubjectDetailView />} />
+                <Route path="students" element={<SubjectStudents />} />
+                <Route path="activity/new" element={<CreateActivityView />} />
+                <Route path="activity/:activityId/edit" element={<EditActivityView />} />
+              </Route>
 
             <Route element={<RoleGuard allowedRole={UserRole.GOD} />}>
               <Route path="access" element={<Access />} />

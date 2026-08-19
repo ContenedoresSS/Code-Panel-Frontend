@@ -11,6 +11,10 @@ interface EditorPaneProps {
   disableEdit?: boolean;
 }
 
+interface MonacoEditorLike {
+  addCommand(keybinding: number, handler: () => void): void;
+}
+
 export function EditorPane({
   language,
   code,
@@ -22,17 +26,17 @@ export function EditorPane({
   disableEdit,
 }: EditorPaneProps) {
   function handleEditorDidMount(_editor: unknown, monaco: unknown) {
-    const editor = _editor as Record<string, unknown>;
-    const m = monaco as Record<string, unknown>;
-    const KeyMod = m.KeyMod as Record<string, number>;
-    const KeyCode = m.KeyCode as Record<string, number>;
+    const editor = _editor as MonacoEditorLike;
+    const m = monaco as { KeyMod?: Record<string, number>; KeyCode?: Record<string, number> };
+    const KeyMod = m.KeyMod ?? {};
+    const KeyCode = m.KeyCode ?? {};
 
     if (disableCopy) {
-      (editor as any).addCommand(KeyMod.CtrlCmd | KeyCode.KeyC, () => {});
-      (editor as any).addCommand(KeyMod.CtrlCmd | KeyCode.KeyX, () => {});
+      editor.addCommand(KeyMod.CtrlCmd | KeyCode.KeyC, () => {});
+      editor.addCommand(KeyMod.CtrlCmd | KeyCode.KeyX, () => {});
     }
     if (disablePaste) {
-      (editor as any).addCommand(KeyMod.CtrlCmd | KeyCode.KeyV, () => {});
+      editor.addCommand(KeyMod.CtrlCmd | KeyCode.KeyV, () => {});
     }
   }
 

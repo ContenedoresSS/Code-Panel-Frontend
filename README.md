@@ -93,7 +93,7 @@ src/
 ├── types/                # Tipos (request, response, dto, enum)
 ├── guards/               # Guards de autenticación y roles
 ├── lib/                  # Axios, interceptors, utils
-├── assets/context/       # AuthContext (estado de sesión)
+├── assets/context/       # AuthContext, AuthProvider, useAuth (sesión)
 ├── utils/                # Utilidades (base64)
 └── hooks/                # Hooks personalizados
 ```
@@ -119,15 +119,19 @@ src/
 ### Autenticación
 
 - JWT con access + refresh tokens almacenados en `localStorage`.
-- `AuthContext` expone `user`, `isAuthenticated`, `isLoading`, `loginState()`, `logoutState()`.
+- El contexto de auth está dividido en tres archivos bajo `src/assets/context/`:
+  - `auth-context.ts` — el objeto `AuthContext` + tipos `User`/`AuthContextType`.
+  - `AuthProvider.tsx` — el componente `AuthProvider` (inicializa el usuario desde el JWT de forma perezosa).
+  - `useAuth.ts` — el hook `useAuth()`.
+- `useAuth()` expone `user`, `isAuthenticated`, `isLoading`, `loginState()`, `logoutState()`, `updateUserName()`.
 - `ProtectedRoute` envuelve rutas autenticadas.
 - `RoleGuard` restringe por rol de usuario.
 
 ### Ejecución de Código
 
-1. El usuario escribe código en Monaco Editor (`EditorComponent`).
+1. El usuario escribe código en Monaco Editor (`EditorComponent`), que soporta **múltiples archivos** (pestañas en `FileTabs.tsx`).
 2. Al presionar "Run", el código y stdin se codifican a **Base64** (UTF-8 seguro vía `TextEncoder`).
-3. Se envía POST a `/api/v1/execution/run` con `{ languageId, code, stdin }`.
+3. Se envía POST a `/api/v1/execution/run` (un archivo) o `/api/v1/execution/run-with-files` (varios archivos, con el **primer archivo** como `entryPoint`).
 4. La respuesta incluye `status`, `stdout`, `stderr` y `timeMs`.
 5. El panel de output muestra el resultado con formato según el estado.
 
@@ -163,7 +167,8 @@ Adicionalmente, el código 429 (rate limit) se maneja con mensaje de "espera 5 m
 | `/embed/editor`                             |  No  |    —     | Editor público (iframe Moodle)     |
 | `/dashboard`                                |  Sí  |    —     | Panel principal                    |
 | `/course`                                   |  Sí  |    —     | Listado de materias                |
-| `/subject/:id`                              |  Sí  |    —     | Actividades de una materia         |
+| `/subject/:id`                              |  Sí  |    —     | Layout de materia (Contenido / Alumnos) |
+| `/subject/:id/students`                     |  Sí  |    —     | Alumnos de la materia (vista profesor)   |
 | `/subject/:id/activity/new`                 |  Sí  |    —     | Crear actividad                    |
 | `/subject/:id/activity/:activityId/edit`    |  Sí  |    —     | Editar actividad                   |
 | `/student`                                  |  Sí  |    —     | Estudiantes (placeholder)          |
