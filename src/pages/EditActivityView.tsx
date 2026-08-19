@@ -6,7 +6,7 @@ import { getTestCases, createTestCase, updateTestCase, deleteTestCase } from "@/
 import { getSubjectById } from "@/service/SubjectService";
 import type { UpdateActivityRequest } from "@/types/request/UpdateActivityRequest";
 import type { SubjectResponse } from "@/types/response/SubjectResponse";
-import type { EditorLanguage } from "@/types/EditorProps";
+import type { EditorLanguage, EditorFile } from "@/types/EditorProps";
 import type { TestCase } from "@/types/response/TestCase";
 import { logger } from "@/lib/logger";
 import {
@@ -114,7 +114,7 @@ export default function EditActivityView() {
     }
   };
 
-  const handleFieldChange = (field: keyof ActivityFormData, value: string | boolean | number) => {
+  const handleFieldChange = (field: keyof ActivityFormData, value: string | boolean | number | EditorFile[]) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 

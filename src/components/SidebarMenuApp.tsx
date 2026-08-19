@@ -1,4 +1,4 @@
-import { useAuth } from "@/assets/context/AuthContext";
+import { useAuth } from "@/assets/context/useAuth";
 import {
   Sidebar,
   SidebarContent,
@@ -65,15 +65,7 @@ return(
                 <SidebarMenuButton asChild>
                   <Link to={"/course"}>
                   <Layers />
-                  <span>Curso</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <Link to={"/student"}>
-                  <User2 />
-                  <span>Alumnos</span>
+                  <span>Cursos</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -91,7 +83,7 @@ return(
                    
                   <Link to={"/access"}>
                   <KeyRound />
-                  <span>Accesos</span>
+                  <span>Invitaciones</span>
                   </Link>
                   )}
                 </SidebarMenuButton>

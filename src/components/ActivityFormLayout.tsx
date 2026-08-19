@@ -1,4 +1,4 @@
-import type { EditorLanguage } from "@/types/EditorProps";
+import type { EditorFile, EditorLanguage } from "@/types/EditorProps";
 import type { TestCase } from "@/types/response/TestCase";
 import type { ActivityFormData } from "@/lib/activity-form-utils";
 
@@ -28,7 +28,7 @@ interface ActivityFormLayoutProps {
   onSave: () => void;
   isSaving: boolean;
   formData: ActivityFormData;
-  onFieldChange: (field: keyof ActivityFormData, value: string | boolean | number) => void;
+  onFieldChange: (field: keyof ActivityFormData, value: string | boolean | number | EditorFile[]) => void;
   editorLanguages: EditorLanguage[];
   isLoadingEditor: boolean;
   testCases: TestCase[];
@@ -115,7 +115,7 @@ export function ActivityFormLayout({
         </div>
       </div>
 
-      <div className="flex flex-1 min-h-0 overflow-hidden p-6 gap-6 pt-6">
+      <div className="flex flex-1 min-h-0 overflow-hidden p-4 gap-4">
         <div className="w-[350px] xl:w-[400px] flex-none flex flex-col gap-6 overflow-y-auto pr-2 pb-4">
           <ActivityConfigCards
             title={formData.title}
@@ -153,8 +153,8 @@ export function ActivityFormLayout({
           ) : (
             <EditorComponent
               languages={editorLanguages}
-              initialCode={{ id: "1", nameFile: "main", code: formData.starterCode, languageId: formData.languageId }}
-              onChangeCode={(code) => onFieldChange("starterCode", code)}
+              initialFiles={formData.starterCode}
+              onChangeFiles={(files) => onFieldChange("starterCode", files)}
               onChangeLanguage={(id) => onFieldChange("languageId", id)}
               onAddTestCase={onOpenTestCaseModal}
             />
@@ -166,7 +166,7 @@ export function ActivityFormLayout({
           onClose={onCloseTestCaseModal}
           testCases={testCases}
           onChange={onTestCasesChange}
-          currentCode={formData.starterCode}
+          currentFiles={formData.starterCode}
           languageId={formData.languageId}
         />
       </div>

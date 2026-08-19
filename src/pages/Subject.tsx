@@ -30,7 +30,7 @@ export default function Subject() {
       setIsLoading(true)
       const subjectsData = await getSubjectsByUser();
       setCourses(subjectsData);
-    } catch (error) {
+    } catch {
       toast.error("Error al cargar las materias")
     }finally{
       setIsLoading(false)
@@ -53,7 +53,7 @@ export default function Subject() {
       setCourses([newSubject, ...courses]);
       toast.success("Materia añadida exitosamente") 
       setIsCreateModalOpen(false);
-    } catch (error) {
+    } catch {
       toast.error("Error al crear la materia:");
     }
   };
@@ -83,7 +83,7 @@ const handleEditSubject = (id: number | string) => {
       toast.success("Materia actualizada exitosmanete")
       setCourseToEdit(null);
       setIsEditModalOpen(false);
-    } catch (error) {
+    } catch {
       toast.error("Error al actualizar la materia");
     }
   };
@@ -98,7 +98,7 @@ const confirmDelete = async () => {
     await deleteSubject(deleteId);
     setCourses(courses.filter(course => course.id !== deleteId));
     toast.success("Materia eliminada correctamente");
-  } catch (error) {
+  } catch {
     toast.error("Error al eliminar la materia");
   } finally {
     setDeleteId(null);
@@ -163,6 +163,7 @@ const confirmDelete = async () => {
 
       {/* <-- 5. Instanciamos el Modal de Edición */}
       <EditSubjecteModal 
+        key={courseToEdit?.id ?? "new"}
         isOpen={isEditModalOpen}
         onClose={() => {
           setIsEditModalOpen(false);
@@ -182,44 +183,3 @@ const confirmDelete = async () => {
     </div>
   );
 }
-
-
-
-
-
-
-/*import EditorComponent from '@/components/EditorComponent';
-import type { EditorLanguage } from '@/types/EditorProps';
-import { useEffect } from 'react';
-
-export default function Course(){
-
-  const SUPPORTED_LANGUAGES: EditorLanguage[] = [
-  { id: 1, monacoId:'cpp', name: 'C++ (gcc 13.2)' },
-    { id: 2, monacoId:'python', name: 'Python (3.11)' },
-    { id: 3, monacoId:'javascript', name: 'Node.js (20)'}
-  ];
-
-  useEffect(() => {
-  })
-
-  return(
-      <div className="flex flex-col h-[calc(100vh-4rem)] p-6 bg-muted/20">
-
-  <div className="flex justify-between items-center mb-4">
-    <div>
-      <h1 className="text-2xl font-bold tracking-tight">Fundamentos de Clases</h1>
-      <p className="text-sm text-muted-foreground">
-          Escribe una breve descripción del ejercicio...
-      </p>
-      </div>
-    
-    </div>
-    <EditorComponent 
-        languages={SUPPORTED_LANGUAGES}
-    />
-
-
-  </div>
-  );
-}*/

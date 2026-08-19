@@ -281,11 +281,14 @@ El componente más complejo de la aplicación. Maneja 5 responsabilidades en 290
 ```ts
 interface EditorPropsInfo {
   languages: EditorLanguage[];         // Lenguajes disponibles
-  initialCode?: EditorCodeFile;        // Código inicial (para edición)
-  onChangeCode?: (code: string) => void;
+  initialFiles?: EditorFile[];         // Archivos iniciales (multi-archivo)
+  onChangeFiles?: (files: EditorFile[]) => void;
   onChangeLanguage?: (languageId: number) => void;
+  // ... (restricciones del editor, test cases, submit)
 }
 ```
+
+El editor maneja un arreglo de `EditorFile` (`{ id, nameFile, code, languageId }`) con pestañas (`src/components/editor/FileTabs.tsx`). El **primer archivo** es el punto de entrada (entryPoint) tanto para `/execution/run-with-files` como para el submit. Los archivos pueden **renombrarse** con doble clic en la pestaña.
 
 ### DashboardLayout (`src/pages/DashboardLayout.tsx`)
 
@@ -295,10 +298,10 @@ Layout autenticado con sidebar de navegación. Envuelve todas las rutas protegid
 
 Sidebar con navegación basada en rol:
 - **Todos:** Dashboard, Cursos, Ajustes
-- **God:** + Acceso, Lenguajes
-- Muestra nombre y rol del usuario (de `AuthContext`)
+- **God:** + Acceso, Lenguajes, Usuarios
+- Muestra nombre y rol del usuario (de `useAuth()`)
 
----
+> **Nota:** El item "Alumnos" ya **no** está en el sidebar global. La vista de alumnos es una sub-sección de cada materia (`/subject/:id/students`), gestionada por `SubjectLayout.tsx`.
 
 ## Embed Editor (Moodle iframe)
 
@@ -325,9 +328,13 @@ const lenguajesSoportados = [
 
 ## Manejo de Estado
 
-### AuthContext (`src/assets/context/AuthContext.tsx`)
+### AuthContext (`src/assets/context/`)
 
-Estado global de autenticación:
+Estado global de autenticación, dividido en tres archivos:
+
+- `auth-context.ts` — define el objeto `AuthContext` y los tipos `User` / `AuthContextType`.
+- `AuthProvider.tsx` — el componente proveedor.
+- `useAuth.ts` — el hook `useAuth()`.
 
 ```ts
 interface AuthContextType {
@@ -336,10 +343,11 @@ interface AuthContextType {
   isLoading: boolean;        // true mientras se verifica el token inicial
   loginState: (token: string, refreshToken: string) => void;
   logoutState: () => void;
+  updateUserName: (name: string) => void;
 }
 ```
 
-Al montar la app, `AuthProvider` verifica el token en `localStorage`. Si existe y no ha expirado, establece el usuario automáticamente.
+`AuthProvider` inicializa el usuario de forma perezosa desde el JWT en `localStorage`. Si existe y no ha expirado, establece el usuario automáticamente.
 
 ### Estado Local
 

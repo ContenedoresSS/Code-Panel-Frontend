@@ -1,8 +1,8 @@
 
 import { InvitationTable } from "@/components/InvitationTable";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Check, Copy, Plus, RefreshCw } from "lucide-react";
+import { Check, Copy, Plus, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { createInvitation, deleteInvitation, getAllInvitations, updateInvitation } from "@/service/InvitationsService";
@@ -17,25 +17,30 @@ export default function Access () {
   const [invitations, setInvitations] = useState<InvitationDTO[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [page, setPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const PAGE_SIZE = 10;
 
   const TEACHER_ROLE_ID = 3;
 
-  useEffect(()=>{
-    fetchInvitations();
-  }, []);
-
-  const fetchInvitations = async () => {
+  const fetchInvitations = useCallback(async () => {
     setIsLoading(true);
     try {
-    const response = await getAllInvitations(1, 50); 
-      
-      setInvitations(response as unknown as InvitationDTO[]);
-    } catch (error) {
+      const response = await getAllInvitations(page, PAGE_SIZE);
+      setInvitations(response.data);
+      setTotalCount(response.totalCount);
+    } catch {
       toast.error("Error al obtener el listado de codigos ")
-    }finally{
+    } finally {
       setIsLoading(false);
     }
-  };
+  }, [page]);
+
+  useEffect(() => {
+    fetchInvitations();
+  }, [fetchInvitations]);
+
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
 const handleGenerateCode = async () => {
   setIsGenerating(true);
@@ -45,7 +50,7 @@ const handleGenerateCode = async () => {
     setGeneratedCode(newInvitation.code);
     setIsCopied(false);
     toast.success("Código de invitación creado correctamente");
-  } catch (error) {
+  } catch {
     toast.error("Error al generar el token de acceso");
   } finally {
     setIsGenerating(false);
@@ -69,7 +74,7 @@ const handleToggleIsUsed = async (id: number, currentIsUsed: boolean) => {
     toast.success(
         `Código ${!currentIsUsed ? "deshabilitado (marcado como usado)" : "reactivado"} con éxito`
       );
-  } catch (error) {
+  } catch {
     setInvitations((prev) =>
         prev.map((inv) => (inv.id === id ? { ...inv, isUsed: currentIsUsed } : inv))
       );
@@ -87,7 +92,7 @@ const handleToggleIsUsed = async (id: number, currentIsUsed: boolean) => {
       await deleteInvitation(deleteId);
       setInvitations((prev) => prev.filter((inv) => inv.id !== deleteId));
       toast.success("Código de invitación eliminado correctamente");
-    } catch (error) {
+    } catch {
       toast.error("Error al intentar eliminar el código");
     } finally {
       setDeleteId(null);
@@ -169,6 +174,37 @@ return (
           />
         </CardContent>
       </Card>
+
+      {totalCount > 0 && (
+        <div className="flex items-center justify-between gap-4">
+          <p className="text-sm text-muted-foreground">
+            {totalCount} código{totalCount !== 1 ? "s" : ""} en total
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1 || isLoading}
+            >
+              <ChevronLeft className="w-4 h-4" />
+              Anterior
+            </Button>
+            <span className="text-sm text-muted-foreground">
+              Página {page} de {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page >= totalPages || isLoading}
+            >
+              Siguiente
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       <ConfirmDialog
         open={deleteId !== null}

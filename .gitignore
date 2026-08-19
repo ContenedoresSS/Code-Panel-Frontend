@@ -25,3 +25,6 @@ dist-ssr
 
 #security
 .env
+
+# Local tooling config
+opencode.json

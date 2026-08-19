@@ -11,8 +11,10 @@ import {
 import { TestCaseModal } from "./TestCaseModal";
 import { TestSimulationResult, type TestSimulationResult as TestResultType } from "./TestSimulationResult";
 import { encodeToBase64, decodeFromBase64 } from "@/utils/base64.util";
-import { executionCode } from "@/service/EditorService";
+import { runCodeWithFiles } from "@/service/EditorService";
+import { toCodeFiles } from "@/lib/editor-files.util";
 import type { TestCase } from "@/types/response/TestCase";
+import type { EditorFile } from "@/types/EditorProps";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 interface TestCaseManagementModalProps {
@@ -20,7 +22,7 @@ interface TestCaseManagementModalProps {
   onClose: () => void;
   testCases: TestCase[];
   onChange: (testCases: TestCase[]) => void;
-  currentCode: string;
+  currentFiles: EditorFile[];
   languageId: number;
 }
 
@@ -29,7 +31,7 @@ export function TestCaseManagementModal({
   onClose,
   testCases,
   onChange,
-  currentCode,
+  currentFiles,
   languageId,
 }: TestCaseManagementModalProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -94,10 +96,13 @@ export function TestCaseManagementModal({
   };
 
   const handleRunTests = async () => {
-    if (testCases.length === 0 || !currentCode.trim()) return;
+    if (testCases.length === 0 || currentFiles.length === 0) return;
 
     setIsTesting(true);
     setTestResults([]);
+
+    const files = toCodeFiles(currentFiles);
+    const entryPoint = files[0]?.name || "main";
 
     const results: TestResultType[] = [];
 
@@ -107,9 +112,10 @@ export function TestCaseManagementModal({
         const decodedInput = tc.input ? decodeFromBase64(tc.input) : "";
         const decodedExpected = tc.expectedOutput ? decodeFromBase64(tc.expectedOutput) : "";
 
-        const response = await executionCode({
+        const response = await runCodeWithFiles({
           languageId,
-          code: encodeToBase64(currentCode),
+          files,
+          entryPoint,
           stdin: encodeToBase64(decodedInput),
         });
 
@@ -172,7 +178,7 @@ export function TestCaseManagementModal({
                 </Badge>
               </div>
               <div className="flex items-center gap-2">
-                {testCases.length > 0 && currentCode.trim() && (
+                {testCases.length > 0 && currentFiles.length > 0 && (
                   <Button onClick={handleRunTests} disabled={isTesting} size="sm" variant="secondary">
                     <Play className={`w-4 h-4 mr-1 ${isTesting ? "animate-spin" : ""}`} />
                     {isTesting ? "Ejecutando..." : "Ejecutar tests"}
@@ -219,6 +225,7 @@ export function TestCaseManagementModal({
       </Dialog>
 
       <TestCaseModal
+        key={`${editingTestCase?.id ?? "new"}-${isModalOpen}`}
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSave={handleSave}

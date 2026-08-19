@@ -1,4 +1,4 @@
-import { useAuth } from "@/assets/context/AuthContext"
+import { useAuth } from "@/assets/context/useAuth";
 import { Navigate, Outlet} from "react-router"
 
 interface RoleCuardProps {

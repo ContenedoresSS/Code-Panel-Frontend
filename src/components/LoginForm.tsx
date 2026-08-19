@@ -10,8 +10,9 @@ import { Button } from "./ui/button"
 import { loginUser} from "@/service/AuthService";
 import { NavLink, useNavigate } from "react-router";
 import { Loader2, Eye, EyeOff } from "lucide-react";
-import { useAuth } from "@/assets/context/AuthContext";
+import { useAuth } from "@/assets/context/useAuth";
 import { logger } from "@/lib/logger";
+import { getErrorStatus } from "@/lib/error.util";
 const formSchema = z.object({
         identifier: z.email("Por favor, ingresa un correo válido."),
         password: z
@@ -42,8 +43,8 @@ export function LoginForm (){
         });
         navigate("/dashboard")
 
-        }catch (error: any) {
-            const status = error.response?.status;
+        }catch (error: unknown) {
+            const status = getErrorStatus(error);
             logger.error("Login error:", error);
             if (status === 403) {
               toast.error("Cuenta desactivada", {

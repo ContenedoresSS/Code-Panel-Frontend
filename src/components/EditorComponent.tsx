@@ -1,21 +1,24 @@
-import type { EditorCodeFile, EditorLanguage } from '@/types/EditorProps';
+import type { EditorFile, EditorLanguage } from '@/types/EditorProps';
 import type { EditorExecutionResponse } from '@/types/response/EditorExecutionResponse';
 import type { PublicTestCase } from '@/types/response/PublicTestCase';
 import type { EvaluationResult } from '@/types/response/EvaluationResult';
-import { useEffect, useState } from 'react';
-import { executionCode } from '@/service/EditorService';
+import type { CodeFile } from '@/types/CodeFile';
+import { useEffect, useMemo, useState } from 'react';
+import { executionCode, runCodeWithFiles } from '@/service/EditorService';
 import { encodeToBase64 } from '@/utils/base64.util';
+import { toCodeFiles } from '@/lib/editor-files.util';
 import { ExecutionStatus } from '@/types/enum/ExecutionStatus';
 import { EditorToolbar } from './editor/EditorToolbar';
 import { EditorPane } from './editor/EditorPane';
 import { OutputPanel } from './editor/OutputPanel';
 import { InputPanel } from './editor/InputPanel';
 import { TestCasesPanel } from './editor/TestCasesPanel';
+import { FileTabs } from './editor/FileTabs';
 
 interface EditorPropsInfo {
   languages: EditorLanguage[];
-  initialCode?: EditorCodeFile;
-  onChangeCode?: (code: string) => void;
+  initialFiles?: EditorFile[];
+  onChangeFiles?: (files: EditorFile[]) => void;
   onChangeLanguage?: (languageId: number) => void;
   disableCopy?: boolean;
   disablePaste?: boolean;
@@ -25,7 +28,7 @@ interface EditorPropsInfo {
   disableDownload?: boolean;
   testCases?: PublicTestCase[];
   maxAttempts?: number;
-  onSubmit?: (code: string, languageId: number) => void;
+  onSubmit?: (files: CodeFile[], languageId: number) => void;
   evaluationResult?: EvaluationResult | null;
   isSubmitting?: boolean;
   onAddTestCase?: () => void;
@@ -56,13 +59,28 @@ const MONACO_LANG_FALLBACK: Record<string, string> = {
   perl: "perl",
 };
 
+let fileIdCounter = 1;
+function nextFileId(): string {
+  return `file-${fileIdCounter++}`;
+}
+
+function defaultFileName(languageId: number, languages: EditorLanguage[], index: number): string {
+  const lang = languages.find((l) => l.id === languageId);
+  const ext = lang?.fileExtension || "txt";
+  return index === 0 ? `main.${ext}` : `archivo${index + 1}.${ext}`;
+}
+
 export default function EditorComponent({
-  languages, initialCode, onChangeCode, onChangeLanguage,
+  languages, initialFiles, onChangeFiles, onChangeLanguage,
   disableCopy, disablePaste, disableEdit, disableLanguageChange, disableUpload, disableDownload,
   testCases, maxAttempts, onSubmit, evaluationResult, isSubmitting, onAddTestCase,
 }: EditorPropsInfo) {
-  const [language, setLanguage] = useState<number>(initialCode?.languageId ?? languages[0]?.id ?? 1);
-  const [code, setCode] = useState<string>(initialCode?.code || "");
+  const [files, setFiles] = useState<EditorFile[]>(() =>
+    initialFiles && initialFiles.length > 0 ? initialFiles : []
+  );
+  const [activeFileId, setActiveFileId] = useState<string>(
+    initialFiles?.[0]?.id ?? ""
+  );
   const [darkMode, setDarkMode] = useState(false);
   const [input, setInput] = useState<string>("");
   const [fontSize, setFontSize] = useState<number>(14);
@@ -70,23 +88,71 @@ export default function EditorComponent({
   const [isExecuting, setIsExecuting] = useState(false);
   const [attemptCount, setAttemptCount] = useState(0);
 
-  const resolvedLang = languages.find(l => l.id === language);
+  useEffect(() => {
+    if (initialFiles && initialFiles.length > 0) {
+      setFiles(initialFiles);
+      setActiveFileId(initialFiles[0].id);
+    }
+  }, [initialFiles]);
+
+  const activeFile = files.find((f) => f.id === activeFileId) ?? files[0];
+
+  const language = activeFile?.languageId ?? languages[0]?.id ?? 1;
+  const code = activeFile?.code ?? "";
+
+  const resolvedLang = languages.find((l) => l.id === language);
   const currentLanguage = resolvedLang?.monacoId
     || MONACO_LANG_FALLBACK[resolvedLang?.name?.toLowerCase() ?? ""]
     || "plaintext";
   const currentLanguageExtension = resolvedLang?.fileExtension || "txt";
 
-  useEffect(() => {
-    if (initialCode) {
-      setLanguage(initialCode.languageId);
-      setCode((prevCode) => {
-        if (prevCode === "" || prevCode !== initialCode.code) {
-          return initialCode.code;
-        }
-        return prevCode;
-      });
+  const multiFile = useMemo(() => files.length > 1, [files]);
+
+  const updateFiles = (next: EditorFile[]) => {
+    setFiles(next);
+    onChangeFiles?.(next);
+  };
+
+  const handleCodeChange = (val: string) => {
+    if (!activeFile) return;
+    updateFiles(files.map((f) => (f.id === activeFile.id ? { ...f, code: val } : f)));
+  };
+
+  const handleSelectFile = (id: string) => {
+    setActiveFileId(id);
+  };
+
+  const handleAddFile = () => {
+    const newFile: EditorFile = {
+      id: nextFileId(),
+      nameFile: defaultFileName(language, languages, files.length),
+      code: "",
+      languageId: language,
+    };
+    const next = [...files, newFile];
+    updateFiles(next);
+    setActiveFileId(newFile.id);
+  };
+
+  const handleRemoveFile = (id: string) => {
+    const next = files.filter((f) => f.id !== id);
+    if (next.length === 0) return;
+    updateFiles(next);
+    if (activeFileId === id) {
+      setActiveFileId(next[0].id);
     }
-  }, [initialCode]);
+  };
+
+  const handleRenameFile = (id: string, name: string) => {
+    updateFiles(files.map((f) => (f.id === id ? { ...f, nameFile: name } : f)));
+  };
+
+  const handleLanguageSelector = (value: string) => {
+    const newLangId = Number(value);
+    if (!activeFile) return;
+    updateFiles(files.map((f) => (f.id === activeFile.id ? { ...f, languageId: newLangId } : f)));
+    if (onChangeLanguage) onChangeLanguage(newLangId);
+  };
 
   const handleRunCode = async () => {
     if (!code.trim()) {
@@ -97,14 +163,22 @@ export default function EditorComponent({
     setOutput("Compilando y ejecutando...");
 
     try {
-      const payload = {
-        languageId: language,
-        code: encodeToBase64(code),
-        stdin: encodeToBase64(input),
-      };
-      const result: EditorExecutionResponse = await executionCode(payload);
-      let formattedOutput = "";
+      const codeFiles = toCodeFiles(files);
+      const stdin = encodeToBase64(input);
+      const result: EditorExecutionResponse = multiFile
+        ? await runCodeWithFiles({
+            languageId: language,
+            files: codeFiles,
+            entryPoint: codeFiles[0]?.name || "main",
+            stdin,
+          })
+        : await executionCode({
+            languageId: language,
+            code: encodeToBase64(code),
+            stdin,
+          });
 
+      let formattedOutput = "";
       switch (result.status) {
         case ExecutionStatus.SUCCESS:
           formattedOutput = result.stdout;
@@ -145,46 +219,44 @@ export default function EditorComponent({
 
   const handleSubmit = () => {
     if (!code.trim() || !onSubmit) return;
-    
+
     if (maxAttempts && maxAttempts > 0 && attemptCount >= maxAttempts) {
       setOutput("Has alcanzado el límite de intentos permitidos para esta actividad.");
       return;
     }
-    
-    onSubmit(code, language);
+
+    onSubmit(toCodeFiles(files), language);
   };
 
-  // Incrementar contador cuando hay un resultado de evaluación
   useEffect(() => {
     if (evaluationResult) {
       setAttemptCount(prev => prev + 1);
     }
   }, [evaluationResult]);
 
-  const handleLanguageSelector = (value: string) => {
-    const newLangId = Number(value);
-    setLanguage(newLangId);
-    if (onChangeLanguage) onChangeLanguage(newLangId);
-  };
-
   const toggleTheme = () => {
     setDarkMode(!darkMode);
   };
 
-  const handleCodeChange = (val: string) => {
-    setCode(val);
-    if (onChangeCode) onChangeCode(val);
-  };
-
   const handleFileUpload = (content: string) => {
-    setCode(content);
-    if (onChangeCode) onChangeCode(content);
+    if (!activeFile) return;
+    updateFiles(files.map((f) => (f.id === activeFile.id ? { ...f, code: content } : f)));
   };
 
   return (
     <div className={`flex flex-col h-full w-full border border-border rounded-md overflow-hidden bg-background text-foreground transition-colors duration-300 ${darkMode ? 'dark' : 'light'}`}>
+      <FileTabs
+        files={files}
+        activeFileId={activeFile?.id ?? ""}
+        onSelectFile={handleSelectFile}
+        onAddFile={handleAddFile}
+        onRemoveFile={handleRemoveFile}
+        onRenameFile={handleRenameFile}
+        disabled={disableEdit}
+      />
+
       <EditorToolbar
-        fileName={initialCode?.nameFile ?? "Nuevo Archivo"}
+        fileName={activeFile?.nameFile ?? "Nuevo Archivo"}
         darkMode={darkMode}
         onToggleTheme={toggleTheme}
         onChangeFontSize={setFontSize}

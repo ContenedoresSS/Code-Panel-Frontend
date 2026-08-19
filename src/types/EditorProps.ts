@@ -5,13 +5,9 @@ export interface EditorLanguage {
   fileExtension: string;
 }
 
-export interface EditorCodeFile {
+export interface EditorFile {
   id: string;
   nameFile: string;
   code: string;
   languageId: number;
 }
-
-export interface EditorConfig {}
-
-export interface EditorTestCase {}

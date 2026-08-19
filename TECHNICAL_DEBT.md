@@ -5,10 +5,10 @@
 | Severidad | Pendientes | Resueltos |
 |-----------|:---------:|:---------:|
 | Crítica    | 0         | 3         |
-| Alta       | 1         | 5         |
-| Media      | 8         | 4         |
-| Baja       | 6         | 2         |
-| **Total**  | **15**    | **14**    |
+| Alta       | 2         | 5         |
+| Media      | 7         | 5         |
+| Baja       | 5         | 3         |
+| **Total**  | **14**    | **16**    |
 
 ---
 
@@ -231,6 +231,24 @@ No existe ningún test en el proyecto. No hay configuración de Vitest, Jest, Re
 
 **Recomendación:** Empezar con tests unitarios para servicios y hooks, luego tests de integración para flujos críticos (login, ejecución de código).
 
+### 9b. Interceptor crashea ante errores de red
+
+**Archivo:** `src/lib/interceptorsConfig.ts:28`
+
+```ts
+if (error.response.status === 401 && !originalRequest._retry) {
+```
+
+Cuando la petición falla por un error de red (timeout, sin conexión, DNS), `error.response` es `undefined`, por lo que acceder a `.status` lanza un `TypeError` que crashea toda la app (pantalla en blanco). El segundo interceptor (línea 62) ya usa el patrón seguro `error.response ? error.response.status : null`, pero el primero no.
+
+**Recomendación:** Añadir al inicio del manejador de errores del refresh:
+```ts
+if (!error.response) return Promise.reject(error);
+```
+y proteger `originalRequest` con `originalRequest &&`.
+
+> ⚠️ Este bug se manifiesta ahora mismo porque el backend de producción está caído (`ERR_CONNECTION_TIMED_OUT`). Ver "Pending Work → Backend/Deployment" en `AGENTS.md`.
+
 ---
 
 ## MEDIA
@@ -239,16 +257,15 @@ No existe ningún test en el proyecto. No hay configuración de Vitest, Jest, Re
 
 | Archivo | Línea | Problema |
 |---------|-------|----------|
-| `assets/context/AuthContext.tsx` | 35 | `checkToken` no está en deps |
-| `pages/Access.tsx` | 21 | `fetchInvitations` no está en deps |
 | `pages/CreateActivityView.tsx` | 50 | `subjectId` no está en deps (array vacío `[]`) |
 | `pages/Language.tsx` | 16 | `fetchLanguages` no está en deps |
 | `pages/Subject.tsx` | 25 | `fetchSubjects` no está en deps |
-| `pages/Subject.tsx` | 187 | Sin dependency array (código comentado) |
 
 **Riesgo:** Stale closures — las funciones dentro del efecto pueden leer valores desactualizados.
 
 **Recomendación:** Mover las funciones dentro del `useEffect` o usar `useCallback`. Activar la regla `react-hooks/exhaustive-deps` como error en ESLint.
+
+**Parcialmente resuelto:** `AuthContext` fue refactorizado a inicialización perezosa (sin `useEffect`); `Access.tsx` ahora usa `useCallback` con deps; el código comentado de `Subject.tsx` fue eliminado.
 
 ---
 
@@ -340,7 +357,9 @@ Los valores están hardcodeados. No hay fetch real de estadísticas.
 
 ---
 
-### 17. RegisterForm — mensajes de error inconsistentes
+### ~~17. RegisterForm — mensajes de error inconsistentes~~ ✅ RESUELTO
+
+**Resolución:** Todos los campos (`name`, `lastName`, `email`, `password`, `confirmPassword`, `identifier`, `invitationCode`) ahora muestran su bloque `{form.formState.errors.* && ...}`.
 
 **Archivo:** `src/components/RegisterForm.tsx`
 
@@ -364,15 +383,11 @@ No consulta la API de lenguajes. Si se añade un lenguaje nuevo en el backend, e
 
 ---
 
-### 19. Sin paginación real en Access
+### ~~19. Sin paginación real en Access~~ ✅ RESUELTO
 
-**Archivo:** `src/pages/Access.tsx:28`
+**Resolución:** `Access.tsx` ahora usa paginación real: estado `page`/`totalCount`, `getAllInvitations(page, PAGE_SIZE)` y controles Anterior/Siguiente con indicador de página. Además se corrigió `InvitationsService.getAllInvitations` (devolvía el array en vez del objeto `{ data, totalCount }`).
 
-```ts
-const response = await getAllInvitations(1, 50);
-```
-
-La paginación está hardcodeada a página 1, 50 items. No hay UI para navegar páginas ni se consulta `totalCount`.
+**Archivos:** `src/pages/Access.tsx`, `src/service/InvitationsService.ts`
 
 ---
 
@@ -390,20 +405,13 @@ La paginación está hardcodeada a página 1, 50 items. No hay UI para navegar p
 
 ## BAJA
 
-### 22. Código muerto comentado
+### ~~22. Código muerto comentado~~ ✅ RESUELTO
 
-**Archivo:** `src/pages/Subject.tsx:175-209`
+**Resolución:** Se eliminó el componente `Course` comentado (~35 líneas) de `src/pages/Subject.tsx`.
 
-35 líneas de un componente `Course` alternativo comentado (incluye `EditorComponent` y `SUPPORTED_LANGUAGES`).
+### ~~23. Interfaces vacías sin uso~~ ✅ RESUELTO
 
-### 23. Interfaces vacías sin uso
-
-**Archivo:** `src/types/EditorProps.ts:14,16`
-
-```ts
-export interface EditorConfig {}
-export interface EditorTestCase {}
-```
+**Resolución:** `src/types/EditorProps.ts` fue refactorizado para el editor multi-archivo; se eliminaron las interfaces vacías `EditorConfig` y `EditorTestCase` (ahora exporta `EditorLanguage` y `EditorFile`).
 
 ### 24. Tipos de request duplicados
 
@@ -435,13 +443,9 @@ const MOBILE_BREAKPOINT = 768;
 - `src/pages/Student.tsx` — `<h1>Estoy en alumnos</h1>` (pendiente)
 - ~~`src/pages/Setting.tsx`~~ ✅ RESUELTO — ahora tiene sección de info de perfil y cambio de contraseña
 
-### 29. `onEdit` de Language sin implementar
+### ~~29. `onEdit` de Language sin implementar~~ ✅ RESUELTO
 
-**Archivo:** `src/pages/Language.tsx:70`
-
-```tsx
-onEdit={(lang) => console.log("Editar", lang)}
-```
+**Resolución:** `src/pages/Language.tsx` ahora implementa `handleEdit`, que abre el formulario en modo edición con los datos del lenguaje (previamente `onEdit={(lang) => console.log("Editar", lang)}`).
 
 ---
 
@@ -628,25 +632,27 @@ src/
 ### Fase 1 (Seguridad y estabilidad)
 1. ~~Agregar `ErrorBoundary` al menos en `DashboardLayout` y `EmbedEditor`~~ ✅
 2. ~~Eliminar o condicionar los 18 `console.log/error`~~ ✅
-3. Sanitizar el output del editor antes de renderizar
+3. ~~Sanitizar el output del editor antes de renderizar~~ ✅ (ver item 21)
+4. **Corregir el crash del interceptor ante errores de red** — `src/lib/interceptorsConfig.ts:28` (ver item 9b)
 
 ### Fase 2 (Type safety)
-4. ~~Corregir `starterCode: any | null` → `starterCode: CodeFile[] | null`~~ ✅
-5. ~~Eliminar `api.get<any>` en ActivityService~~ ✅
-6. ~~Crear `UserRole` enum y reemplazar strings/números mágicos~~ ✅
+5. ~~Corregir `starterCode: any | null` → `starterCode: CodeFile[] | null`~~ ✅
+6. ~~Eliminar `api.get<any>` en ActivityService~~ ✅
+7. ~~Crear `UserRole` enum y reemplazar strings/números mágicos~~ ✅
+8. ~~Eliminar interfaces vacías en `EditorProps.ts`~~ ✅ (ver item 23)
 
 ### Fase 3 (Eliminar duplicación)
-7. Extraer `ActivityFormLayout` y `useActivityForm` de Create/Edit
-8. Dividir `EditorComponent` en subcomponentes
-9. Extraer mapeo de lenguajes a función utilitaria
+9. ~~Extraer `ActivityFormLayout` de Create/Edit~~ ✅
+10. ~~Dividir `EditorComponent` en subcomponentes~~ ✅ (extraído a `editor/` + `FileTabs` para multi-archivo)
+11. ~~Extraer mapeo de lenguajes a función utilitaria~~ ✅ (`mapApiLanguagesToEditorLanguages`)
 
 ### Fase 4 (Arquitectura)
-10. Mover `api` a `HttpClient` abstraído con factory functions
-11. Reorganizar en estructura por dominios (migración progresiva)
-12. Configurar TanStack Query para manejo de estado servidor
+12. Mover `api` a `HttpClient` abstraído con factory functions
+13. Reorganizar en estructura por dominios (migración progresiva)
+14. Configurar TanStack Query para manejo de estado servidor
 
 ### Fase 5 (Calidad)
-13. Configurar Vitest + React Testing Library
-14. Agregar tests unitarios para servicios
-15. Agregar tests de integración para flujos críticos
-16. Activar `exhaustive-deps` como error en ESLint
+15. Configurar Vitest + React Testing Library
+16. Agregar tests unitarios para servicios
+17. Agregar tests de integración para flujos críticos
+18. Activar `exhaustive-deps` como error en ESLint

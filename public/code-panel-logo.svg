@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="200" height="200">
+  <!-- Fondo con esquinas redondeadas y el color oklch solicitado -->
+  <rect x="10" y="10" width="80" height="80" rx="26" fill="oklch(0.2077 0.0398 265.75)" />
+  
+  <!-- Símbolos de código < > -->
+  <path d="M 42 38 L 28 50 L 42 62 M 58 38 L 72 50 L 58 62" 
+        fill="none" 
+        stroke="#ffffff" 
+        stroke-width="7" 
+        stroke-linecap="round" 
+        stroke-linejoin="round" />
+</svg>
