@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useParams, useLocation } from "react-router";
-import { Layers, Users, Loader2 } from "lucide-react";
+import { Layers, Users, ClipboardList, Loader2 } from "lucide-react";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -30,6 +30,7 @@ export default function SubjectLayout() {
   const navItems = [
     { to: `/subject/${id}`, label: "Contenido", icon: Layers, end: true },
     { to: `/subject/${id}/students`, label: "Alumnos", icon: Users, end: false },
+    { to: `/subject/${id}/grades`, label: "Calificaciones", icon: ClipboardList, end: false },
   ];
 
   return (

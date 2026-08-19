@@ -21,6 +21,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import SubjectDetailView from './pages/SubjectDetailView';
 import SubjectLayout from './pages/SubjectLayout';
 import SubjectStudents from './pages/SubjectStudents';
+import SubjectGrades from './pages/SubjectGrades';
 import CreateActivityView from './pages/CreateActivityView';
 import EditActivityView from './pages/EditActivityView';
 import Subject from './pages/Subject';
@@ -51,6 +52,7 @@ function App() {
               <Route path="/subject/:id" element={<SubjectLayout />}>
                 <Route index element={<SubjectDetailView />} />
                 <Route path="students" element={<SubjectStudents />} />
+                <Route path="grades" element={<SubjectGrades />} />
                 <Route path="activity/new" element={<CreateActivityView />} />
                 <Route path="activity/:activityId/edit" element={<EditActivityView />} />
               </Route>
