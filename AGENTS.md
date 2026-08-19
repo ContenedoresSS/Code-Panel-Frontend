@@ -94,7 +94,8 @@ src/
 │   ├── LanguageService.ts    # Language CRUD
 │   ├── InvitationsService.ts # Invitation code CRUD (paginated)
 │   ├── UserService.ts        # Profile + password + admin user management
-│   └── TestCaseService.ts    # Test case CRUD
+│   ├── TestCaseService.ts    # Test case CRUD
+│   └── SettingsService.ts    # Global settings (email domains allowed for registration)
 │
 ├── types/
 │   ├── request/          # Request DTOs
@@ -498,6 +499,8 @@ When rate-limited, the backend returns **HTTP 429**. The frontend shows a "wait 
 | PATCH  | `/user/password`             | Yes      | Change password                        |
 | GET    | `/user`                      | Yes      | List users, paginated (God only)       |
 | PATCH  | `/user/:id`                  | Yes      | Manage user: password, isActive, role (God only) |
+| GET    | `/settings/email-domains`    | Yes      | List allowed registration email domains (God only) |
+| PUT    | `/settings/email-domains`    | Yes      | Replace allowed registration email domains (God only) |
 
 ### Error Response Format
 
@@ -530,12 +533,16 @@ HTTP codes and their handling (via Axios interceptors):
 | `/programming-language/*`   | `src/service/LanguageService.ts` |
 | `/invitation/*`             | `src/service/InvitationsService.ts` |
 | `/user/*`                   | `src/service/UserService.ts`        |
+| `/settings/*`               | `src/service/SettingsService.ts`    |
 
 ---
 
 ## Settings Page
 
-The `/setting` page (`src/pages/Setting.tsx`) provides two sections:
+The `/setting` page (`src/pages/Setting.tsx`) is split into two sections:
+
+- **Configuración del Perfil** — visible to all authenticated users (profile information + change password).
+- **Configuración Global del Sistema** — visible **only to `God`** (allowed registration email domains).
 
 ### Profile Information
 - Fetched from `GET /user/profile` on mount
@@ -552,6 +559,17 @@ The `/setting` page (`src/pages/Setting.tsx`) provides two sections:
 - On HTTP 401, shows "La contraseña actual es incorrecta"
 
 Both forms use React Hook Form + Zod (same pattern as `LoginForm`).
+
+### Global System Settings (God only)
+
+- Fetched from `GET /settings/email-domains` on mount (only when `user.role === "God"`).
+- The **"Dominios de correo permitidos"** card lets the admin manage the list of email domains
+  allowed to register on the platform.
+- Domains are added one by one via an input + `Badge` chips (with remove buttons). Input is
+  validated with a domain regex, lowercased and deduplicated client-side.
+- Saved via `PUT /settings/email-domains` (replaces the whole list).
+- An empty list (`{"domains": []}`) means **all domains are allowed** — the UI shows a hint for this.
+- The response/request schema is `{ domains: string[] }` (no `{ success, data }` wrapper).
 
 ---
 
