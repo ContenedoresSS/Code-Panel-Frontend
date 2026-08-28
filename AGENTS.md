@@ -618,5 +618,5 @@ Both forms use React Hook Form + Zod (same pattern as `LoginForm`).
 
 ### Deuda técnica / Quality
 - No automated tests configured (see `TECHNICAL_DEBT.md`).
-- Lint debt: **10 errors** remain, all pre-existing (not from this branch): `react-hooks/set-state-in-effect` (`EditSubjectModal`, `TestCaseModal`), `@typescript-eslint/no-explicit-any` (`EditUserModal`, `LanguageForm`, `RegisterForm`, `TokenService`) and `react-refresh/only-export-components` (`theme-provider`, `badge`, `button`, `sidebar`).
+- Lint: **0 errores**, solo 4 warnings `react-refresh/only-export-components` en primitivas shadcn/ui (`theme-provider`, `badge`, `button`, `sidebar`) que intencionalmente exportan variantes/helpers.
 - Architectural debt (domain separation, dependency injection, repository layer, caching) documented in `TECHNICAL_DEBT.md`.
