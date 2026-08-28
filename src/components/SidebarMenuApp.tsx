@@ -61,6 +61,7 @@ return(
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+{user?.role !== UserRole.STUDENT && (
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <Link to={"/course"}>
@@ -69,48 +70,44 @@ return(
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+              )}
               <SidebarMenuItem></SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+        {user?.role === UserRole.GOD && (
         <SidebarGroup>
           <SidebarGroupLabel>ADMIN</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  {user?.role === UserRole.GOD && (
-                   
                   <Link to={"/access"}>
                   <KeyRound />
                   <span>Invitaciones</span>
                   </Link>
-                  )}
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  {user?.role === UserRole.GOD && (
                   <Link to={"/language"}>
                   <SquareChartGantt />
                   <span>Lenguaje</span>
                   </Link>
-                  )}
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  {user?.role === UserRole.GOD && (
                   <Link to={"/user"}>
                   <Users />
                   <span>Usuarios</span>
                   </Link>
-                  )}
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+        )}
         <SidebarGroup>
           <SidebarGroupLabel>SYSTEM</SidebarGroupLabel>
           <SidebarGroupContent>

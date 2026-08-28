@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router";
-import { Loader2 } from "lucide-react";
+import { Loader2, LogIn } from "lucide-react";
 import EditorComponent from "@/components/EditorComponent";
 import { EmbedLoginForm } from "@/components/EmbedLoginForm";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/assets/context/useAuth";
 import { getWorkspace, submitSolution } from "@/service/ActivityService";
 import { getAllLanguages } from "@/service/LanguageService";
@@ -23,6 +24,8 @@ export default function EmbedActivity() {
   const [allLanguages, setAllLanguages] = useState<EditorLanguage[]>([]);
   const [evaluationResult, setEvaluationResult] = useState<EvaluationResult | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [guestMode, setGuestMode] = useState(false);
+  const workspaceLoaded = useRef(false);
 
   const editorLanguage: EditorLanguage = useMemo(() => {
     if (!workspace) {
@@ -53,24 +56,36 @@ export default function EmbedActivity() {
   }, [workspace]);
 
   useEffect(() => {
-    if (!isAuthenticated || !activityId) return;
+    if (!activityId || (!isAuthenticated && !guestMode)) return;
+
+    const loadLanguages = async () => {
+      const languagesData = await getAllLanguages().catch(() => []);
+      const mappedLangs: EditorLanguage[] = languagesData.map((lang) => ({
+        id: lang.id,
+        monacoId: lang.editorIdentifier,
+        name: `${lang.name} (${lang.version})`,
+        fileExtension: lang.fileExtension,
+      }));
+      setAllLanguages(mappedLangs);
+    };
+
+    if (workspaceLoaded.current) {
+      if (isAuthenticated) loadLanguages();
+      return;
+    }
 
     setIsLoadingWorkspace(true);
     setWorkspaceError(null);
 
-    Promise.all([
-      getWorkspace(activityId),
-      getAllLanguages().catch(() => []),
-    ])
-      .then(([workspaceData, languagesData]) => {
+    getWorkspace(activityId)
+      .then(async (workspaceData) => {
         setWorkspace(workspaceData);
-        const mappedLangs: EditorLanguage[] = languagesData.map((lang) => ({
-          id: lang.id,
-          monacoId: lang.editorIdentifier,
-          name: `${lang.name} (${lang.version})`,
-          fileExtension: lang.fileExtension,
-        }));
-        setAllLanguages(mappedLangs);
+        workspaceLoaded.current = true;
+        if (isAuthenticated) {
+          await loadLanguages();
+        } else {
+          setAllLanguages([]);
+        }
       })
       .catch((err) => {
         logger.error("Error al cargar workspace:", err);
@@ -79,7 +94,12 @@ export default function EmbedActivity() {
         );
       })
       .finally(() => setIsLoadingWorkspace(false));
-  }, [isAuthenticated, activityId]);
+  }, [isAuthenticated, activityId, guestMode]);
+
+  const handleGuestLogin = () => {
+    setGuestMode(false);
+    setEvaluationResult(null);
+  };
 
   const handleSubmit = async (files: CodeFile[], languageId: number) => {
     if (!activityId) return;
@@ -107,11 +127,11 @@ export default function EmbedActivity() {
     );
   }
 
-  if (!isAuthenticated) {
-    return <EmbedLoginForm />;
+  if (!isAuthenticated && !guestMode && !workspace) {
+    return <EmbedLoginForm onGuestMode={() => setGuestMode(true)} />;
   }
 
-  if (isLoadingWorkspace) {
+  if (isLoadingWorkspace && !workspace) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-2">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -139,24 +159,57 @@ export default function EmbedActivity() {
   }
 
   return (
-    <div className="flex flex-col h-full w-full bg-background">
+    <div className="relative flex flex-col h-full min-h-screen w-full bg-background">
       <header className="flex-shrink-0 border-b border-border px-4 py-3">
-        <h1 className="text-sm font-bold truncate">{workspace.title}</h1>
-        {workspace.description && (
-          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
-            {workspace.description}
-          </p>
-        )}
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <h1 className="text-sm font-bold truncate">{workspace.title}</h1>
+            {workspace.description && (
+              <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                {workspace.description}
+              </p>
+            )}
+          </div>
+          {guestMode && !evaluationResult && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="shrink-0 gap-2"
+              onClick={handleGuestLogin}
+            >
+              <LogIn className="h-4 w-4" />
+              Iniciar sesión
+            </Button>
+          )}
+        </div>
       </header>
+
+      {guestMode && evaluationResult && (
+        <div className="flex-shrink-0 flex items-center justify-between gap-3 border-b border-border bg-amber-500/10 px-4 py-2">
+          <p className="text-xs text-amber-700 dark:text-amber-400">
+            No iniciaste sesión: tu envío se evaluó, pero <strong>no se guardó</strong> en la
+            plataforma.
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="shrink-0 gap-2"
+            onClick={handleGuestLogin}
+          >
+            <LogIn className="h-4 w-4" />
+            Iniciar sesión para guardar
+          </Button>
+        </div>
+      )}
 
       <div className="flex-1 min-h-0">
         <EditorComponent
-          languages={workspace.rules.allowLanguageChange ? allLanguages : [editorLanguage]}
+          languages={!guestMode && workspace.rules.allowLanguageChange ? allLanguages : [editorLanguage]}
           initialFiles={initialFiles}
           disableCopy={!workspace.rules.allowCopy}
           disablePaste={!workspace.rules.allowPaste}
           disableEdit={!workspace.rules.allowCodeEdit}
-          disableLanguageChange={!workspace.rules.allowLanguageChange}
+          disableLanguageChange={guestMode || !workspace.rules.allowLanguageChange}
           disableUpload={!workspace.rules.allowFileUpload}
           disableDownload={!workspace.rules.allowFileDownload}
           testCases={workspace.testCases.filter(tc => !tc.isHidden)}
@@ -166,6 +219,12 @@ export default function EmbedActivity() {
           isSubmitting={isSubmitting}
         />
       </div>
+
+      {!isAuthenticated && !guestMode && workspace && (
+        <div className="absolute inset-0 z-50 bg-background/90 backdrop-blur-sm overflow-y-auto">
+          <EmbedLoginForm onGuestMode={() => setGuestMode(true)} />
+        </div>
+      )}
     </div>
   );
 }

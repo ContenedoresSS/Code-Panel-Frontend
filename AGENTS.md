@@ -36,12 +36,13 @@ src/
 │   ├── EmbedActivity.tsx  # Embedded activity editor (iframe in Moodle, per-activity)
 │   ├── Login.tsx         # Login page
 │   ├── Register.tsx      # Registration page
-│   ├── Dashboard.tsx     # Main dashboard (overview, real data by role)
+│   ├── Dashboard.tsx     # Main dashboard (per-role: Teacher/God stats; Student sees registration message)
 │   ├── DashboardLayout.tsx # Authenticated layout with sidebar
 │   ├── Subject.tsx       # Course/subject listing & CRUD
-│   ├── SubjectLayout.tsx # Subject layout with sub-nav (Contenido / Alumnos) + Outlet
+│   ├── SubjectLayout.tsx # Subject layout with sub-nav (Contenido / Alumnos / Calificaciones) + Outlet
 │   ├── SubjectDetailView.tsx  # "Contenido" of a subject (activities list, dnd)
-│   ├── SubjectStudents.tsx    # "Alumnos" of a subject (teacher grade view)
+│   ├── SubjectStudents.tsx    # "Alumnos" of a subject (enrolled students table)
+│   ├── SubjectGrades.tsx      # "Calificaciones" of a subject (per-activity grades + submission details)
 │   ├── CreateActivityView.tsx # Create new activity
 │   ├── EditActivityView.tsx   # Edit existing activity
 │   ├── Student.tsx       # Student view (placeholder — not implemented)
@@ -77,6 +78,7 @@ src/
 │   ├── ModeToggle.tsx        # Light/dark theme toggle
 │   ├── theme-provider.tsx
 │   ├── ActivityConfigCards.tsx  # Activity configuration card (restrictions, general info)
+│   ├── SubmissionDetailModal.tsx # Modal with submission details (code snapshot, output, grade)
 │   └── test-case/            # Test case management components
 │       ├── TestCaseModal.tsx            # Create/edit single test case
 │       ├── TestCaseList.tsx             # List of test cases
@@ -119,6 +121,7 @@ src/
 │   │   ├── EnrolledStudent.ts
 │   │   ├── StudentGrade.ts
 │   │   ├── StudentSubmission.ts
+│   │   ├── SubmissionDetail.ts
 │   │   ├── MessageResponse.ts
 │   │   ├── VerifyResetCodeResponse.ts
 │   │   └── ...
@@ -229,8 +232,8 @@ Use **React Hook Form** with **Zod** validation. Form components (LoginForm, Reg
 | Role      | Description                                                       |
 | --------- | ----------------------------------------------------------------- |
 | `God`     | Super admin — full access including language management, invitation codes and user management |
-| `Teacher` | Professor — manages subjects, activities, students (including per-activity grades in `/subject/:id/students`) |
-| `Student` | Student — can register but **no views have been implemented yet** (the `/student` page is a placeholder) |
+| `Teacher` | Professor — manages subjects, activities, students (including per-activity grades in `/subject/:id/grades`) |
+| `Student` | Student — can register; on login the Dashboard shows a registration-confirmation message (no admin content). Activities are done inside the Moodle iframe |
 
 ---
 
@@ -244,8 +247,9 @@ Use **React Hook Form** with **Zod** validation. Form components (LoginForm, Reg
 | `/embed/activity/:activityId`              | No            | —             | Embedded activity editor with workspace + restrictions |
 | `/dashboard`                                | Yes           | —             | Main dashboard             |
 | `/course`                                   | Yes           | —             | Subject listing            |
-| `/subject/:id`                              | Yes           | —             | Subject layout with sub-nav (Contenido / Alumnos) + Outlet |
-| `/subject/:id/students`                     | Yes           | —             | "Alumnos" of a subject — teacher grade view (drill-down) |
+| `/subject/:id`                              | Yes           | —             | Subject layout with sub-nav (Contenido / Alumnos / Calificaciones) + Outlet |
+| `/subject/:id/students`                     | Yes           | —             | "Alumnos" of a subject — enrolled students table |
+| `/subject/:id/grades`                       | Yes           | —             | "Calificaciones" of a subject — per-activity grades + submission detail modal |
 | `/subject/:id/activity/new`                 | Yes           | —             | Create new activity        |
 | `/subject/:id/activity/:activityId/edit`    | Yes           | —             | Edit existing activity     |
 | `/student`                                  | Yes           | —             | Student list (placeholder) |
@@ -297,10 +301,20 @@ Nginx config uses `try_files $uri $uri/ /index.html` for SPA routing support.
 - **The `/embed/editor` route is public** (no auth required) — it is designed to be embedded as an iframe in Moodle. It hardcodes the supported languages locally (not fetched from the API).
 - **The `/embed/activity/:activityId` route** is the activity-specific embedded editor. It fetches the workspace from the API, enforces teacher-configured restrictions, and fetches all languages from `/programming-language` when language switching is allowed.
 - **Code and stdin are sent to the backend in Base64** to support special characters and binary-safe transport.
-- **The `Student` role exists for registration but has no dedicated UI yet** — the `/student` page is a placeholder.
+- **The `Student` role has no admin views.** After logging in to the main app, the Dashboard shows a registration-confirmation message ("¡Registro exitoso!") instead of stats; the sidebar hides "Cursos". Activities are done inside the Moodle iframe.
+- **The sidebar is role-dynamic** (`SidebarMenuApp.tsx`): the whole **ADMIN** group (Invitaciones / Lenguaje / Usuarios) renders **only for `God`**, and **Cursos** is hidden for `Student`.
 - The **invitation system** (`/access`) generates one-time-use codes to register teachers. Only `God` role can access this.
 - **Theme support** is provided via `next-themes` (light/dark) with a `ModeToggle` component.
 - The API base URL comment in `src/lib/axios.ts` shows the local alternative for development — swap the comment when working locally.
+- **The iframe code** copied from the activity list (`SortableActivityItem.tsx`, button "Iframe") generates `<iframe src="<origin>/embed/activity/<id>" width="100%" height="800px" ...>`.
+
+### Guest / Anonymous Access in the iframe (EmbedActivity)
+
+- `EmbedLoginForm` includes a **"Continuar sin iniciar sesión"** button (`onGuestMode` prop) that activates `guestMode` in `EmbedActivity`.
+- In guest mode the page loads the **public workspace** (`GET /activity/:id/workspace`) but **does not** call `getAllLanguages` (God-only endpoint); the editor uses only the workspace language (`allowLanguageChange` effectively off).
+- **Run** works normally (public endpoint, rate-limited). **Test** submits via `POST /activity/:id/submit` (auth optional): the evaluation is returned but **not persisted** for anonymous users.
+- After a guest submit, an **amber banner** appears: "No iniciaste sesión: tu envío se evaluó, pero no se guardó en la plataforma" with a single login CTA (the header "Iniciar sesión" button is hidden while `evaluationResult` is present to avoid duplication).
+- Clicking "Iniciar sesión" opens `EmbedLoginForm` as an **overlay on top of the editor** (the editor is never unmounted, so code/stdin/output/active tab are preserved). On successful login the overlay closes and only the languages are (re)loaded — a `workspaceLoaded` ref prevents re-fetching the workspace and avoids the loading screen remounting the editor.
 
 ### Activity Restrictions (Profesor-controlled)
 
@@ -329,6 +343,7 @@ Teachers can configure the following restrictions per activity. These flow from 
 - The **first file** in the list is the **entry point**: it is used as `entryPoint` for `/execution/run-with-files` and, because the backend submit uses `files[0]` as the entry, it is also the entry on submit. It is marked with a ▶ indicator on its tab. New files default to `main.<ext>` (first) / `archivo<N>.<ext>` (subsequent).
 - `src/lib/editor-files.util.ts` exports `toCodeFiles(EditorFile[]): CodeFile[]` to build submit/run payloads.
 - The teacher activity form (`ActivityFormLayout` + `activity-form-utils.ts`) stores `starterCode` as an `EditorFile[]` list, decodes **all** workspace files on edit/duplicate, and builds the `CodeFile[]` payload on save.
+- **`EditorComponent` keeps `files`/`activeFileId` as its own internal state** (no reactive sync with `initialFiles`). `initialFiles` is only the initial value of the `useState`. To force a fresh mount when loading a specific activity, `ActivityFormLayout` passes an `activityKey` (the activity UUID) as the `key` of `EditorComponent`; `EditActivityView` uses `activityId` and `CreateActivityView` uses `duplicateId` (or `"new"`).
 
 ### Language Editing
 
@@ -373,19 +388,27 @@ From the subject grid (`Subject.tsx`), the "3 puntitos" dropdown on each `Subjec
 - Clones the subject **with its activities and test cases**; it does **not** clone enrollments or submissions.
 - On success the new subject is prepended to the grid and a toast shows the count of cloned activities and test cases (`DuplicateSubjectResponse`).
 
-### Subject "Alumnos" View (Teacher)
+### Subject "Alumnos" / "Calificaciones" Views (Teacher)
 
-The global sidebar no longer has an "Alumnos" item. Instead, each subject (`/subject/:id`) is a **layout** (`SubjectLayout.tsx`) with a sub-navigation ("Contenido" / "Alumnos") and nested routes:
+The global sidebar no longer has an "Alumnos" item. Instead, each subject (`/subject/:id`) is a **layout** (`SubjectLayout.tsx`) with a sub-navigation ("Contenido" / "Alumnos" / "Calificaciones") and nested routes:
+
 - `/subject/:id` → **Contenido** (activity list, `SubjectDetailView.tsx`)
 - `/subject/:id/students` → **Alumnos** (`SubjectStudents.tsx`)
+- `/subject/:id/grades` → **Calificaciones** (`SubjectGrades.tsx`)
 
-`SubjectStudents.tsx` is a **drill-down view** for teachers:
-1. Loads enrolled students (`GET /subject/:id/students`) and the subject's activities (`GET /activity` filtered by subject).
-2. For each activity, loads its grades (`GET /activity/:id/grades`).
-3. Each student row expands to show their **calificación por actividad** (best score), number of attempts, and further expands per activity to show the **submission history** (fecha, hora, estado, passedTests/totalTests, executionTimeMs).
-4. Filters: text search (name, email, matrícula) and a dropdown to filter by activity.
+`SubjectStudents.tsx` is a **simple table** of enrolled students:
+1. Loads enrolled students (`GET /subject/:id/students`, all enrolled, not filtered by submissions).
+2. Each row shows name, email/matrícula, and enrollment date.
+3. Filter: text search (name, email, matrícula) done client-side.
 
-> **Note:** The backend currently exposes grades only per-activity (`GET /activity/:id/grades`), not aggregated by subject. The view fetches grades per activity. A backend endpoint for "grades by subject" is a pending improvement.
+`SubjectGrades.tsx` is a **per-activity grade view** with drill-down:
+1. Loads the subject's activities (`GET /activity` filtered by subject) and preselects the **first activity**.
+2. For the selected activity, loads its grades (`GET /activity/:id/grades`).
+3. Each student row expands to show their **submission history** (fecha, hora, estado, calificación, passedTests/totalTests, executionTimeMs) and a "Ver detalles" button.
+4. "Ver detalles" opens `SubmissionDetailModal`, which fetches `GET /activity/:id/submissions/:submissionId` to show the full code snapshot (multi-file, Base64-decoded), compiler output, language, grade, tests and timestamp.
+5. Filter: text search (name, email, matrícula) and a dropdown to select the activity.
+
+> **Note:** The backend currently exposes grades only per-activity (`GET /activity/:id/grades`), not aggregated by subject. The "Calificaciones" view selects an activity and fetches grades per activity. A backend endpoint for "grades by subject" is a pending improvement.
 
 ---
 
@@ -484,6 +507,7 @@ When rate-limited, the backend returns **HTTP 429**. The frontend shows a "wait 
 | GET    | `/activity/:id/workspace`    | No       | Public workspace for embedded editor   |
 | POST   | `/activity/:id/submit`       | Optional | Submit solution for evaluation         |
 | GET    | `/activity/:id/grades`       | Yes      | Per-activity student grades (Teacher/God) |
+| GET    | `/activity/:id/submissions/:submissionId` | Yes | Submission detail with code snapshot (Teacher/God) |
 | GET    | `/subject/:id/students`      | Yes      | Enrolled students of a subject (Teacher/God) |
 | POST   | `/enrollment`                | Yes      | Enroll a student in a subject          |
 | GET    | `/enrollment`                | Yes      | List enrollments (Student/Teacher/God) |
@@ -585,15 +609,14 @@ Both forms use React Hook Form + Zod (same pattern as `LoginForm`).
 
 ### Backend / Deployment
 - **Server is currently unreachable** — `https://codepanel.orchfr.duckdns.org` (IP `139.177.97.29`) times out on `/api/health`, `/api/v1` and `/`. DNS resolves but the VPS/containers are not responding. Needs VPS access to diagnose (Docker, Nginx, ports) and restart services. Until resolved, no data loads in the frontend.
-- **Grades aggregated by subject** — the backend exposes grades only per-activity (`GET /activity/:id/grades`). The "Alumnos" view (`SubjectStudents.tsx`) fetches grades per activity and combines them client-side. A backend endpoint for "grades by subject" would simplify this (requested, pending).
+- **Grades aggregated by subject** — the backend exposes grades only per-activity (`GET /activity/:id/grades`). The "Calificaciones" view (`SubjectGrades.tsx`) selects an activity and fetches grades per activity. A backend endpoint for "grades by subject" would simplify this (requested, pending).
 - **Student enrollment flow** — the `/enrollment` endpoints exist but the Student UI (self-enroll, list own enrollments) is not built. The Dashboard shows "Mis Materias" for Student via `GET /enrollment`, but the full student flow is pending.
 
 ### Frontend
-- **Anonymous access in the iframe** — plan approved: add a "Continuar sin iniciar sesión" (guest) button to `EmbedLoginForm.tsx` so `EmbedActivity` can load the public workspace and submit anonymously (`saved: false`). Not yet implemented.
 - **Block Student login on the main platform** — the Student role should only log in inside the iframe, not on the main web app (they share `localStorage`). Approach (detect iframe + role guard) was discussed but left pending.
 - **Interceptor bug** — `src/lib/interceptorsConfig.ts:28` accesses `error.response.status` without guarding for network errors (timeout/offline), which crashes the whole app when the backend is unreachable. Fix: add `if (!error.response) return Promise.reject(error)` at the start of the refresh-token error handler (mirroring the safe pattern at line 62).
 
 ### Deuda técnica / Quality
 - No automated tests configured (see `TECHNICAL_DEBT.md`).
-- Lint debt reduced to **0 errors**; only 4 `react-refresh/only-export-components` warnings remain on shadcn/ui primitives (`badge`, `button`, `sidebar`, `theme-provider`) that intentionally export cva variants/helpers.
+- Lint debt: **10 errors** remain, all pre-existing (not from this branch): `react-hooks/set-state-in-effect` (`EditSubjectModal`, `TestCaseModal`), `@typescript-eslint/no-explicit-any` (`EditUserModal`, `LanguageForm`, `RegisterForm`, `TokenService`) and `react-refresh/only-export-components` (`theme-provider`, `badge`, `button`, `sidebar`).
 - Architectural debt (domain separation, dependency injection, repository layer, caching) documented in `TECHNICAL_DEBT.md`.
