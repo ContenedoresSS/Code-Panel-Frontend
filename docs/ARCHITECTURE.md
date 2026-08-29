@@ -184,7 +184,9 @@ App.tsx Routes
 │   └── <DashboardLayout>  ← Sidebar + contenido
 │       ├── /dashboard
 │       ├── /course
-│       ├── /subject/:id
+│       ├── /subject/:id           ← <SubjectLayout> (Contenido / Alumnos / Calificaciones)
+│       ├── /subject/:id/students  ← Alumnos (tabla de inscritos)
+│       ├── /subject/:id/grades    ← Calificaciones (por actividad + detalle de envío)
 │       ├── /student
 │       ├── /setting
 │       │
@@ -215,7 +217,7 @@ App.tsx Routes
 | --------- | :----------: | ------------------------------------------- |
 | God       | `"God"`      | Todo (incluye /access, /language)           |
 | Teacher   | `"Teacher"`  | Dashboard, cursos, actividades, ajustes     |
-| Student   | `"Student"`  | Solo puede registrarse (vistas no implementadas) |
+| Student   | `"Student"`  | Dashboard con mensaje de registro (sin secciones administrativas); actividades vía iframe |
 
 ---
 
@@ -297,11 +299,17 @@ Layout autenticado con sidebar de navegación. Envuelve todas las rutas protegid
 ### SidebarMenuApp (`src/components/SidebarMenuApp.tsx`)
 
 Sidebar con navegación basada en rol:
-- **Todos:** Dashboard, Cursos, Ajustes
-- **God:** + Acceso, Lenguajes, Usuarios
+- **God:** Dashboard, Cursos, Configuración + grupo **ADMIN** (Invitaciones, Lenguaje, Usuarios)
+- **Teacher:** Dashboard, Cursos, Configuración — **sin** grupo ADMIN (se oculta completo)
+- **Student:** Dashboard, Configuración — se ocultan "Cursos" y el grupo ADMIN
 - Muestra nombre y rol del usuario (de `useAuth()`)
 
-> **Nota:** El item "Alumnos" ya **no** está en el sidebar global. La vista de alumnos es una sub-sección de cada materia (`/subject/:id/students`), gestionada por `SubjectLayout.tsx`.
+> **Nota:** Los items "Alumnos" y "Calificaciones" ya **no** están en el sidebar global. Son sub-secciones de cada materia (`/subject/:id/students` y `/subject/:id/grades`), gestionadas por `SubjectLayout.tsx`.
+
+### Dashboard por rol
+
+- **Teacher / God:** estadísticas reales (total de cursos y actividades vía `getSubjectsByUser()` / `getActivitiesTotal()`).
+- **Student:** no muestra estadísticas. Renderiza una pantalla de mensaje ("¡Registro exitoso!") indicando que la cuenta se registró correctamente, que las actividades se realizan en Moodle (iframe) y que no tiene acceso a las secciones administrativas. Incluye botón "Cerrar sesión".
 
 ## Embed Editor (Moodle iframe)
 
@@ -323,6 +331,18 @@ const lenguajesSoportados = [
 - Usa el mismo `EditorComponent` pero en modo standalone.
 - Recibe parámetros por query string (activity ID).
 - No requiere login — el endpoint `/execution/run` acepta requests sin auth desde este contexto.
+
+### EmbedActivity y modo invitado (`/embed/activity/:activityId`)
+
+Editor embebido por actividad (workspace + restricciones del profesor). Soporta **acceso anónimo**:
+
+1. `EmbedLoginForm` ofrece el botón **"Continuar sin iniciar sesión"** (`onGuestMode` → `guestMode`).
+2. En modo invitado se carga el workspace **público** (`GET /activity/:id/workspace`) y **no** se llama a `getAllLanguages` (endpoint God-only): el editor usa únicamente el lenguaje del workspace.
+3. **Run** funciona normal; **Test** (`POST /activity/:id/submit`, auth opcional) evalúa pero **no persiste** el envío.
+4. Tras el envío anónimo aparece una barra ámbar "No iniciaste sesión: tu envío se evaluó, pero no se guardó" con un único CTA de login (el botón del header se oculta cuando hay `evaluationResult` para evitar duplicados).
+5. "Iniciar sesión" abre el login como **overlay sobre el editor** (no se desmonta `EditorComponent`, por lo que código, stdin, salida y pestaña activa se conservan). Al autenticarse solo se cargan los lenguajes; un ref `workspaceLoaded` evita refetchear el workspace y evita la pantalla de carga que remontaría el editor.
+
+> **Altura del iframe:** el botón "Iframe" de la lista de actividades (`SortableActivityItem.tsx`) genera `<iframe ... width="100%" height="800px">`.
 
 ---
 

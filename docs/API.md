@@ -197,6 +197,44 @@ Duplica una materia junto con sus actividades y casos de prueba (para un nuevo p
 | `activitiesCloned`  | number | Cantidad de actividades clonadas  |
 | `testCasesCloned`   | number | Cantidad de casos de prueba clonados |
 
+### `GET /subject/:id/students`
+
+Obtiene los estudiantes inscritos de una materia (Teacher/God).
+
+**Query Params:**
+
+| Param    | Tipo   | Default | Descripción                       |
+| -------- | ------ | :-----: | --------------------------------- |
+| `skip`   | number |    0    | Registros a omitir                |
+| `take`   | number |   100   | Límite de registros               |
+| `search` | string |   —     | Filtro por nombre, email o matrícula |
+
+**Response:** `PaginatedResponse<EnrolledStudent>`
+```json
+{
+  "data": [
+    {
+      "id": "uuid-string",
+      "name": "Juan",
+      "lastName": "Pérez",
+      "email": "juan@uady.mx",
+      "identifier": "A123456",
+      "enrolledAt": "2024-01-15T10:30:00Z"
+    }
+  ],
+  "totalCount": 1
+}
+```
+
+| Campo         | Tipo           | Descripción                    |
+| ------------- | -------------- | ------------------------------ |
+| `id`          | string (UUID)  | ID del estudiante              |
+| `name`        | string         | Nombre                         |
+| `lastName`    | string         | Apellido                       |
+| `email`       | string         | Email                          |
+| `identifier`  | string \| null | Matrícula / identificador      |
+| `enrolledAt`  | string         | Fecha de inscripción (ISO 8601)|
+
 ---
 
 ## Activity (Actividades)
@@ -321,6 +359,107 @@ Actualiza una actividad existente (todos los campos son opcionales).
 Elimina una actividad.
 
 **Response:** `void` (204 No Content)
+
+---
+
+### `GET /activity/:id/grades`
+
+Obtiene las calificaciones por estudiante de una actividad (Teacher/God).
+
+**Query Params:**
+
+| Param    | Tipo   | Default | Descripción                       |
+| -------- | ------ | :-----: | --------------------------------- |
+| `skip`   | number |    0    | Registros a omitir                |
+| `take`   | number |   100   | Límite de registros               |
+| `search` | string |   —     | Filtro por nombre, email o matrícula |
+
+**Response:** `PaginatedResponse<StudentGrade>`
+```json
+{
+  "data": [
+    {
+      "student": {
+        "id": "uuid-string",
+        "name": "Juan",
+        "lastName": "Pérez",
+        "email": "juan@uady.mx",
+        "identifier": "A123456"
+      },
+      "finalGrade": 80,
+      "submissions": [
+        {
+          "id": "uuid-string",
+          "finalGrade": 80,
+          "passedTests": 4,
+          "totalTests": 5,
+          "executionTimeMs": 1200,
+          "status": "WRONG_ANSWER",
+          "submittedAt": "2024-01-15T10:30:00Z"
+        }
+      ]
+    }
+  ],
+  "totalCount": 1
+}
+```
+
+| Campo          | Tipo                  | Descripción                                |
+| -------------- | --------------------- | ------------------------------------------ |
+| `student`      | object                | Datos del estudiante (id, name, lastName, email, identifier) |
+| `finalGrade`   | number \| null        | Mejor calificación sobre 100               |
+| `submissions`  | `StudentSubmission[]` | Historial de envíos del estudiante         |
+
+`StudentSubmission`:
+- `id` (string UUID), `finalGrade` (number \| null), `passedTests` (number), `totalTests` (number), `executionTimeMs` (number \| null), `status` (`SubmissionStatus`), `submittedAt` (ISO 8601)
+
+---
+
+### `GET /activity/:id/submissions/:submissionId`
+
+Obtiene el detalle completo de un envío, incluyendo el código fuente (Teacher/God).
+
+**Response:** `SubmissionDetail`
+```json
+{
+  "id": "uuid-string",
+  "studentId": "uuid-string",
+  "activityId": "uuid-string",
+  "languageId": 1,
+  "codeSnapshot": [
+    {
+      "name": "main.cpp",
+      "content": "I2luY2x1ZGUgPGlvc3RyZWFtPgo="
+    }
+  ],
+  "finalGrade": 80,
+  "passedTests": 4,
+  "totalTests": 5,
+  "executionTimeMs": 1200,
+  "status": "WRONG_ANSWER",
+  "compilerOutput": null,
+  "submittedAt": "2024-01-15T10:30:00Z"
+}
+```
+
+| Campo             | Tipo                | Descripción                                    |
+| ----------------- | ------------------- | ---------------------------------------------- |
+| `id`              | string (UUID)       | ID del envío                                   |
+| `studentId`       | string (UUID)       | ID del estudiante                              |
+| `activityId`      | string (UUID)       | ID de la actividad                             |
+| `languageId`      | number              | ID del lenguaje de programación                |
+| `codeSnapshot`    | `CodeFile[]`        | Código enviado (Base64), multi-archivo         |
+| `finalGrade`      | number \| null      | Calificación sobre 100                         |
+| `passedTests`     | number              | Casos de prueba superados                      |
+| `totalTests`      | number              | Total de casos de prueba                       |
+| `executionTimeMs` | number \| null      | Tiempo de ejecución en ms                      |
+| `status`          | `SubmissionStatus`  | Estado de la evaluación (ver tabla abajo)      |
+| `compilerOutput`  | string \| null      | Error de compilación si hubo                   |
+| `submittedAt`     | string              | Fecha/hora del envío (ISO 8601)                |
+| `languageName`    | string \| null      | *(opcional, preparado)* nombre del lenguaje     |
+| `stdout`          | string \| null      | *(opcional, preparado)* salida estándar         |
+
+> **Nota:** `languageName` y `stdout` son campos opcionales preparados para cambios futuros del backend. Actualmente el frontend usa `languageId` (mapeado vía `GET /programming-language`) y muestra `compilerOutput`.
 
 ---
 
@@ -723,6 +862,9 @@ El frontend maneja los siguientes códigos HTTP globalmente vía interceptors:
 | `/subject/*`                | `src/service/SubjectService.ts` |
 | `/activity/*`               | `src/service/ActivityService.ts` |
 | `/activity/:id/test-case/*` | `src/service/TestCaseService.ts` |
+| `/activity/:id/grades`      | `src/service/ActivityService.ts` |
+| `/activity/:id/submissions/:submissionId` | `src/service/ActivityService.ts` |
+| `/subject/:id/students`     | `src/service/SubjectService.ts` |
 | `/execution/run`            | `src/service/EditorService.ts`  |
 | `/programming-language/*`   | `src/service/LanguageService.ts` |
 | `/invitation/*`             | `src/service/InvitationsService.ts` |

@@ -154,7 +154,7 @@ Adicionalmente, el código 429 (rate limit) se maneja con mensaje de "espera 5 m
 | --------- | --------------------------------------------------------------- |
 | **God**   | Super admin — gestión de lenguajes, códigos de invitación       |
 | **Teacher** | Profesor — gestiona materias, actividades, estudiantes        |
-| **Student** | Estudiante — puede registrarse pero **no tiene vistas aún**   |
+| **Student** | Estudiante — puede registrarse; al iniciar sesión ve un mensaje de confirmación (sin secciones administrativas). Actividades vía iframe |
 
 ---
 
@@ -165,10 +165,12 @@ Adicionalmente, el código 429 (rate limit) se maneja con mensaje de "espera 5 m
 | `/login`                                    |  No  |    —     | Inicio de sesión                   |
 | `/register`                                 |  No  |    —     | Registro                           |
 | `/embed/editor`                             |  No  |    —     | Editor público (iframe Moodle)     |
+| `/embed/activity/:activityId`               |  No  |    —     | Actividad embebida (con acceso invitado) |
 | `/dashboard`                                |  Sí  |    —     | Panel principal                    |
 | `/course`                                   |  Sí  |    —     | Listado de materias                |
-| `/subject/:id`                              |  Sí  |    —     | Layout de materia (Contenido / Alumnos) |
-| `/subject/:id/students`                     |  Sí  |    —     | Alumnos de la materia (vista profesor)   |
+| `/subject/:id`                              |  Sí  |    —     | Layout de materia (Contenido / Alumnos / Calificaciones) |
+| `/subject/:id/students`                     |  Sí  |    —     | Alumnos de la materia (tabla de inscritos)   |
+| `/subject/:id/grades`                       |  Sí  |    —     | Calificaciones por actividad + detalle de envío |
 | `/subject/:id/activity/new`                 |  Sí  |    —     | Crear actividad                    |
 | `/subject/:id/activity/:activityId/edit`    |  Sí  |    —     | Editar actividad                   |
 | `/student`                                  |  Sí  |    —     | Estudiantes (placeholder)          |

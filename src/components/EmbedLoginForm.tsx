@@ -18,9 +18,10 @@ const formSchema = z.object({
 
 interface EmbedLoginFormProps {
   onLoginSuccess?: () => void;
+  onGuestMode?: () => void;
 }
 
-export function EmbedLoginForm({ onLoginSuccess }: EmbedLoginFormProps) {
+export function EmbedLoginForm({ onLoginSuccess, onGuestMode }: EmbedLoginFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { loginState } = useAuth();
 
@@ -97,6 +98,29 @@ export function EmbedLoginForm({ onLoginSuccess }: EmbedLoginFormProps) {
             )}
           </Button>
         </form>
+
+        {onGuestMode && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-3">
+              <span className="h-px flex-1 bg-border" />
+              <span className="text-xs text-muted-foreground uppercase tracking-wider">
+                o
+              </span>
+              <span className="h-px flex-1 bg-border" />
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={onGuestMode}
+            >
+              Continuar sin iniciar sesión
+            </Button>
+            <p className="text-xs text-center text-muted-foreground">
+              Podrás ver y ejecutar la actividad, pero tu envío no se guardará en la plataforma.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

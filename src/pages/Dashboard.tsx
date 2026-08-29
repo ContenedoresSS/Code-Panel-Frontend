@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
-import { BookOpen, FileText, Layers, Loader2 } from "lucide-react";
+import { BookOpen, FileText, Layers, Loader2, BadgeCheck } from "lucide-react";
 import { StatCard } from "@/components/CardInfo";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/assets/context/useAuth";
 import { getSubjectsByUser } from "@/service/SubjectService";
 import { getActivitiesTotal } from "@/service/ActivityService";
 import { getMyEnrollments } from "@/service/EnrollmentService";
 import { UserRole } from "@/types/enum/UserRole";
 import { toast } from "sonner";
+import { useNavigate } from "react-router";
 
 interface DashboardStats {
   subjectCount: number;
@@ -14,9 +16,15 @@ interface DashboardStats {
 }
 
 export default function Dashboard() {
-  const { user } = useAuth();
+  const { user, logoutState } = useAuth();
   const [stats, setStats] = useState<DashboardStats>({ subjectCount: 0, activityCount: 0 });
   const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logoutState();
+    navigate("/login");
+  };
 
   useEffect(() => {
     let active = true;
@@ -61,6 +69,29 @@ export default function Dashboard() {
 
   const isTeacherOrGod =
     user?.role === UserRole.TEACHER || user?.role === UserRole.GOD;
+
+  if (user?.role === UserRole.STUDENT) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[70vh] w-full max-w-2xl mx-auto p-4 text-center">
+        <div className="bg-primary text-primary-foreground p-4 rounded-2xl shadow-xl mb-6">
+          <BadgeCheck className="size-12" />
+        </div>
+        <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4 tracking-tight">
+          ¡Registro exitoso, {user.name}!
+        </h1>
+        <p className="text-lg text-muted-foreground mb-3">
+          Tu cuenta de estudiante se registró correctamente en CodePanel.
+        </p>
+        <p className="text-base text-muted-foreground mb-8">
+          Las actividades se realizan dentro de la plataforma de tu curso (Moodle). No tienes
+          acceso a las secciones administrativas desde aquí.
+        </p>
+        <Button variant="outline" onClick={handleLogout}>
+          Cerrar sesión
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[70vh] w-full max-w-5xl mx-auto p-4">
