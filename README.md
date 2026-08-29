@@ -8,21 +8,21 @@ Permite a profesores crear actividades de programación, a estudiantes ejecutar 
 
 ## Tech Stack
 
-| Capa              | Tecnología                         |
-| ----------------- | ---------------------------------- |
-| Framework         | React 19                           |
-| Lenguaje          | TypeScript 5.9                     |
-| Build Tool        | Vite 8                             |
-| Estilos           | Tailwind CSS 4 + tw-animate-css    |
-| Componentes UI    | shadcn/ui (Radix UI) + Lucide      |
-| Editor de Código  | @monaco-editor/react (Monaco 0.55) |
-| Routing           | React Router v7                    |
-| HTTP Client       | Axios                              |
-| Autenticación     | JWT (access + refresh tokens)      |
-| Formularios       | React Hook Form + Zod              |
-| Notificaciones    | Sonner (toast)                     |
-| Drag & Drop       | @dnd-kit                           |
-| Theming           | next-themes                        |
+| Capa             | Tecnología                         |
+| ---------------- | ---------------------------------- |
+| Framework        | React 19                           |
+| Lenguaje         | TypeScript 5.9                     |
+| Build Tool       | Vite 8                             |
+| Estilos          | Tailwind CSS 4 + tw-animate-css    |
+| Componentes UI   | shadcn/ui (Radix UI) + Lucide      |
+| Editor de Código | @monaco-editor/react (Monaco 0.55) |
+| Routing          | React Router v7                    |
+| HTTP Client      | Axios                              |
+| Autenticación    | JWT (access + refresh tokens)      |
+| Formularios      | React Hook Form + Zod              |
+| Notificaciones   | Sonner (toast)                     |
+| Drag & Drop      | @dnd-kit                           |
+| Theming          | next-themes                        |
 
 ---
 
@@ -58,14 +58,14 @@ La app estará disponible en `http://localhost:5173`.
 
 ## Scripts Disponibles
 
-| Comando                | Descripción                                    |
-| ---------------------- | ---------------------------------------------- |
-| `npm run dev`          | Iniciar servidor de desarrollo con Vite        |
-| `npm run build`        | TypeCheck + build de producción                |
-| `npm run preview`      | Previsualizar build de producción              |
-| `npm run lint`         | Ejecutar ESLint                                |
-| `npm run format`       | Formatear código con Prettier                  |
-| `npm run format:check` | Verificar formato sin modificar archivos       |
+| Comando                | Descripción                              |
+| ---------------------- | ---------------------------------------- |
+| `npm run dev`          | Iniciar servidor de desarrollo con Vite  |
+| `npm run build`        | TypeCheck + build de producción          |
+| `npm run preview`      | Previsualizar build de producción        |
+| `npm run lint`         | Ejecutar ESLint                          |
+| `npm run format`       | Formatear código con Prettier            |
+| `npm run format:check` | Verificar formato sin modificar archivos |
 
 ---
 
@@ -74,28 +74,44 @@ La app estará disponible en `http://localhost:5173`.
 ```
 src/
 ├── pages/               # Componentes de página (rutas)
-│   ├── EmbedEditor.tsx   # Editor embebido público (iframe Moodle)
-│   ├── Login.tsx / Register.tsx
+│   ├── Login.tsx / Register.tsx / RecoverPassword.tsx
 │   ├── Dashboard.tsx / DashboardLayout.tsx
-│   ├── Subject.tsx / SubjectDetailView.tsx
+│   ├── Subject.tsx / SubjectLayout.tsx / SubjectDetailView.tsx
+│   ├── SubjectStudents.tsx / SubjectGrades.tsx
 │   ├── CreateActivityView.tsx / EditActivityView.tsx
+│   ├── EmbedEditor.tsx / EmbedActivity.tsx
 │   ├── Student.tsx / Setting.tsx
-│   ├── Access.tsx / Language.tsx
+│   ├── Access.tsx / Language.tsx / User.tsx
 │
 ├── components/
 │   ├── ui/               # Primitivas shadcn/ui
-│   ├── EditorComponent.tsx   # Editor Monaco + panel output
-│   ├── SidebarMenuApp.tsx
-│   ├── SubjectCard.tsx
-│   └── ...
+│   ├── editor/           # EditorToolbar, EditorPane, FileTabs,
+│   │                     # OutputPanel, InputPanel, TestCasesPanel
+│   ├── test-case/        # TestCaseModal, TestCaseList, TestCaseManager,
+│   │                     # TestCaseManagementModal, TestSimulationResult
+│   ├── EditorComponent.tsx   # Editor Monaco multiarchivo + paneles
+│   ├── ActivityFormLayout.tsx / ActivityConfigCards.tsx
+│   ├── SortableActivityItem.tsx / SubmissionDetailModal.tsx
+│   ├── SidebarMenuApp.tsx / SubjectCard.tsx / CardInfo.tsx
+│   ├── CreateSubjectModal.tsx / EditSubjectModal.tsx / DuplicateSubjectModal.tsx
+│   ├── EmbedLoginForm.tsx / LoginForm.tsx / RegisterForm.tsx
+│   ├── LanguageForm.tsx / LanguageTable.tsx
+│   ├── InvitationTable.tsx / UserTable.tsx / EditUserModal.tsx
+│   ├── ModeToggle.tsx / theme-provider.tsx / ErrorBoundary.tsx
 │
 ├── service/              # Capa de servicios API
-├── types/                # Tipos (request, response, dto, enum)
-├── guards/               # Guards de autenticación y roles
-├── lib/                  # Axios, interceptors, utils
-├── assets/context/       # AuthContext, AuthProvider, useAuth (sesión)
-├── utils/                # Utilidades (base64)
-└── hooks/                # Hooks personalizados
+│   ├── AuthService / TokenService / SubjectService / ActivityService
+│   ├── EditorService / EnrollmentService / LanguageService
+│   ├── InvitationsService / UserService / TestCaseService / SettingsService
+│
+├── types/                # request/, response/, dto/, enum/
+│                         # EditorProps, CourseProps, CodeFile
+├── guards/               # ProtectedRoute, RoleGuard
+├── lib/                  # axios, interceptorsConfig, activity-form-utils,
+│                         # editor-files.util, error.util, logger, utils
+├── assets/context/       # auth-context, AuthProvider, useAuth (sesión)
+├── utils/                # base64.util, sanitize.util
+└── hooks/                # use-mobile
 ```
 
 ---
@@ -137,12 +153,12 @@ src/
 
 ### Estados de Ejecución
 
-| Estado                | Significado                               |
-| --------------------- | ----------------------------------------- |
-| `SUCCESS`             | Código ejecutado correctamente            |
-| `COMPILE_ERROR`       | Error de compilación/sintaxis             |
-| `RUNTIME_ERROR`       | Excepción en tiempo de ejecución          |
-| `TIME_LIMIT_EXCEEDED` | El código excedió el límite de tiempo     |
+| Estado                | Significado                           |
+| --------------------- | ------------------------------------- |
+| `SUCCESS`             | Código ejecutado correctamente        |
+| `COMPILE_ERROR`       | Error de compilación/sintaxis         |
+| `RUNTIME_ERROR`       | Excepción en tiempo de ejecución      |
+| `TIME_LIMIT_EXCEEDED` | El código excedió el límite de tiempo |
 
 Adicionalmente, el código 429 (rate limit) se maneja con mensaje de "espera 5 minutos".
 
@@ -150,34 +166,88 @@ Adicionalmente, el código 429 (rate limit) se maneja con mensaje de "espera 5 m
 
 ## Roles de Usuario
 
-| Rol       | Permisos                                                        |
-| --------- | --------------------------------------------------------------- |
-| **God**   | Super admin — gestión de lenguajes, códigos de invitación       |
-| **Teacher** | Profesor — gestiona materias, actividades, estudiantes        |
+| Rol         | Permisos                                                                                                                                |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| **God**     | Super admin — gestión de lenguajes, códigos de invitación y usuarios                                                                    |
+| **Teacher** | Profesor — gestiona materias, actividades, estudiantes                                                                                  |
 | **Student** | Estudiante — puede registrarse; al iniciar sesión ve un mensaje de confirmación (sin secciones administrativas). Actividades vía iframe |
 
 ---
 
 ## Rutas Principales
 
-| Ruta                                        | Auth | Rol      | Descripción                        |
-| ------------------------------------------- | :--: | :------: | ---------------------------------- |
-| `/login`                                    |  No  |    —     | Inicio de sesión                   |
-| `/register`                                 |  No  |    —     | Registro                           |
-| `/embed/editor`                             |  No  |    —     | Editor público (iframe Moodle)     |
-| `/embed/activity/:activityId`               |  No  |    —     | Actividad embebida (con acceso invitado) |
-| `/dashboard`                                |  Sí  |    —     | Panel principal                    |
-| `/course`                                   |  Sí  |    —     | Listado de materias                |
-| `/subject/:id`                              |  Sí  |    —     | Layout de materia (Contenido / Alumnos / Calificaciones) |
-| `/subject/:id/students`                     |  Sí  |    —     | Alumnos de la materia (tabla de inscritos)   |
-| `/subject/:id/grades`                       |  Sí  |    —     | Calificaciones por actividad + detalle de envío |
-| `/subject/:id/activity/new`                 |  Sí  |    —     | Crear actividad                    |
-| `/subject/:id/activity/:activityId/edit`    |  Sí  |    —     | Editar actividad                   |
-| `/student`                                  |  Sí  |    —     | Estudiantes (placeholder)          |
-| `/setting`                                  |  Sí  |    —     | Configuración                      |
-| `/access`                                   |  Sí  |   God    | Códigos de invitación              |
-| `/language`                                 |  Sí  |   God    | Gestión de lenguajes               |
-| `/403`                                      |  —   |    —     | Acceso denegado                    |
+| Ruta                                     | Auth | Rol | Descripción                                              |
+| ---------------------------------------- | :--: | :-: | -------------------------------------------------------- |
+| `/login`                                 |  No  |  —  | Inicio de sesión                                         |
+| `/register`                              |  No  |  —  | Registro                                                 |
+| `/recover-password`                      |  No  |  —  | Recuperación de contraseña (3 pasos)                     |
+| `/embed/editor`                          |  No  |  —  | Editor público (iframe Moodle)                           |
+| `/embed/activity/:activityId`            |  No  |  —  | Actividad embebida (con acceso invitado)                 |
+| `/dashboard`                             |  Sí  |  —  | Panel principal                                          |
+| `/course`                                |  Sí  |  —  | Listado de materias                                      |
+| `/subject/:id`                           |  Sí  |  —  | Layout de materia (Contenido / Alumnos / Calificaciones) |
+| `/subject/:id/students`                  |  Sí  |  —  | Alumnos de la materia (tabla de inscritos)               |
+| `/subject/:id/grades`                    |  Sí  |  —  | Calificaciones por actividad + detalle de envío          |
+| `/subject/:id/activity/new`              |  Sí  |  —  | Crear actividad                                          |
+| `/subject/:id/activity/:activityId/edit` |  Sí  |  —  | Editar actividad                                         |
+| `/student`                               |  Sí  |  —  | Estudiantes (placeholder)                                |
+| `/setting`                               |  Sí  |  —  | Configuración                                            |
+| `/access`                                |  Sí  | God | Códigos de invitación                                    |
+| `/language`                              |  Sí  | God | Gestión de lenguajes                                     |
+| `/user`                                  |  Sí  | God | Gestión de usuarios                                      |
+| `/403`                                   |  —   |  —  | Acceso denegado                                          |
+
+---
+
+## Funcionalidades Clave
+
+### Editor multiarchivo
+
+`EditorComponent` gestiona un arreglo de `EditorFile` (`{ id, nameFile, code, languageId }`) con pestañas (`FileTabs.tsx`):
+
+- Seleccionar, cerrar, **añadir** y **renombrar** archivos (doble clic en la pestaña, con validación de nombre vacío/duplicado).
+- El **primer archivo** es el **entry point**: se usa como `entryPoint` en `/execution/run-with-files` y como entrada en el submit del backend. Se marca con ▶ en su pestaña.
+- Upload/download del archivo activo; la extensión de descarga sale de `LanguageResponse.fileExtension` (no de un mapa hardcodeado).
+
+### Restricciones de actividad (Profesor)
+
+| Campo                 | Efecto al deshabilitarlo                                        |
+| --------------------- | --------------------------------------------------------------- |
+| `allowCopy`           | Bloquea Ctrl+C / Ctrl+X en Monaco                               |
+| `allowPaste`          | Bloquea Ctrl+V en Monaco                                        |
+| `allowEdit`           | Pone Monaco en `readOnly: true`                                 |
+| `allowLanguageChange` | Deshabilita el selector de lenguaje en el toolbar               |
+| `allowUpload`         | Oculta el botón de subir archivo                                |
+| `allowDownload`       | Oculta el botón de descargar archivo                            |
+| `maxAttempts`         | Máx. intentos de envío (0 = ilimitado); se aplica al botón Test |
+
+### Sistema de casos de prueba
+
+- **Profesor** (Create/EditActivityView): gestión CRUD completa desde un modal, con casos privados (`isHidden`), simulación local de todos los casos contra el código actual, e IDs temporales negativos hasta guardar la actividad.
+- **Estudiante** (EmbedActivity): solo ve los casos **públicos**; el botón **Test** envía contra todos los casos (públicos + ocultos) y muestra un resultado agregado `passedTests/totalTests (%)`. Los casos ocultos nunca se revelan.
+
+### Duplicar materia
+
+Desde el menú de tres puntos de cada `SubjectCard`, la opción **Duplicar** llama a `POST /subject/:id/duplicate`. Clona la materia **con sus actividades y casos de prueba** (no clona inscripciones ni envíos). Si no se renombra, usa `"<nombre> (copia)"`.
+
+### Recuperación de contraseña
+
+Wizard de 3 pasos en `/recover-password`:
+
+1. `POST /auth/forgot-password` — envía un código de 6 dígitos por email (respuesta idéntica exista o no el email, anti-enumeración).
+2. `POST /auth/verify-reset-code` — valida el código y devuelve un `resetToken` (JWT de 15 min).
+3. `POST /auth/reset-password` — establece la nueva contraseña con el `resetToken` (nunca persistido en `localStorage`).
+
+### Dominios de email permitidos (God)
+
+En `/setting`, la tarjeta **"Dominios de correo permitidos"** gestiona la lista de dominios que pueden registrarse (chips con validación de dominio). Se guarda con `PUT /settings/email-domains`; una lista vacía (`[]`) significa que todos los dominios están permitidos.
+
+### Flujo invitado en el iframe
+
+El editor embebido (`/embed/activity/:activityId`) permite **"Continuar sin iniciar sesión"**:
+
+- Carga el workspace público y usa solo el lenguaje de la actividad (sin selector de lenguaje).
+- **Run** funciona normalmente; **Test** evalúa pero **no persiste** el envío para usuarios anónimos, y muestra un banner ámbar con CTA para iniciar sesión (el editor nunca se desmonta, conservando código/entrada/salida).
 
 ---
 
@@ -197,9 +267,9 @@ docker pull ghcr.io/<org>/code-panel-frontend:latest
 
 ### CI/CD (GitHub Actions)
 
-| Workflow              | Disparador     | Acción                                      |
-| --------------------- | -------------- | ------------------------------------------- |
-| `cicd_docker.yml`     | Push de tag `v*` | Build multi-arch + push a GHCR             |
+| Workflow               | Disparador          | Acción                                      |
+| ---------------------- | ------------------- | ------------------------------------------- |
+| `cicd_docker.yml`      | Push de tag `v*`    | Build multi-arch + push a GHCR              |
 | `cd_deploy_on_vps.yml` | Post-Docker publish | SSH al VPS → `docker compose pull && up -d` |
 
 ---
