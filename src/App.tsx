@@ -27,6 +27,7 @@ import EditActivityView from './pages/EditActivityView';
 import Subject from './pages/Subject';
 import RecoverPassword from './pages/RecoverPassword';
 import { UserRole } from './types/enum/UserRole';
+import { RatEasterEgg } from './components/easter-egg/RatEasterEgg';
 
 function App() {
   
@@ -67,6 +68,7 @@ function App() {
       </Routes>
       
       <Toaster richColors />
+      <RatEasterEgg />
     </ThemeProvider>
   )
 }

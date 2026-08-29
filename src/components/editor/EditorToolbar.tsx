@@ -6,13 +6,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import type { EditorLanguage } from "@/types/EditorProps";
 
 interface EditorToolbarProps {
@@ -96,9 +90,7 @@ export function EditorToolbar({
   return (
     <div className="flex justify-between items-center p-2 bg-muted/50 border-b border-border">
       <div className="flex border rounded-md bg-background min-h-[35px] md:min-h-[40px] transition-all">
-        <span className="font-mono text-sm font-semibold px-2 text-foreground p-2">
-          {fileName}
-        </span>
+        <span className="font-mono text-sm font-semibold px-2 text-foreground p-2">{fileName}</span>
       </div>
 
       <div className="flex justify-between items-center">
@@ -141,19 +133,14 @@ export function EditorToolbar({
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="center">
-            <DropdownMenuItem onClick={() => onChangeFontSize(12)}>
-              12
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onChangeFontSize(15)}>
-              15
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onChangeFontSize(18)}>
-              18
-            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onChangeFontSize(12)}>12</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onChangeFontSize(15)}>15</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onChangeFontSize(18)}>18</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
         <button
+          data-rat-theme
           onClick={onToggleTheme}
           className="p-2 hover:bg-muted rounded-md transition-colors"
           title="Cambiar tema del editor"
@@ -163,7 +150,10 @@ export function EditorToolbar({
       </div>
 
       <Select value={currentLanguage.toString()} onValueChange={onLanguageChange}>
-        <SelectTrigger className="w-[160px] h-8 text-xs bg-background" disabled={disableLanguageChange}>
+        <SelectTrigger
+          className="w-[160px] h-8 text-xs bg-background"
+          disabled={disableLanguageChange}
+        >
           <SelectValue placeholder="Lenguaje" />
         </SelectTrigger>
         <SelectContent>
