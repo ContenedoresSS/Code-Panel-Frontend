@@ -9,7 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Edit2, Trash2, TerminalSquare, Box, Loader2 } from "lucide-react";
+import { Edit2, Trash2, TerminalSquare, Box, Loader2, Download } from "lucide-react";
 import type { LanguageResponse } from "@/types/response/LanguageResponse";
 
 interface LanguageTableProps {
@@ -17,9 +17,18 @@ interface LanguageTableProps {
   isLoading: boolean;
   onEdit?: (language: LanguageResponse) => void;
   onDelete?: (id: number) => void;
+  onEnsureImage?: (language: LanguageResponse) => void;
+  ensuringId?: number | null;
 }
 
-export default function LanguageTable({ languages, isLoading, onEdit, onDelete }: LanguageTableProps) {
+export default function LanguageTable({
+  languages,
+  isLoading,
+  onEdit,
+  onDelete,
+  onEnsureImage,
+  ensuringId,
+}: LanguageTableProps) {
   return (
     <Card className="border-border bg-card text-card-foreground shadow-sm h-full">
       <CardHeader className="border-b border-border pb-4">
@@ -86,6 +95,20 @@ export default function LanguageTable({ languages, isLoading, onEdit, onDelete }
                     {/* Columna: Acciones */}
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => onEnsureImage?.(lang)}
+                          disabled={ensuringId === lang.id}
+                          className="text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                          title="Verificar/Instalar imagen"
+                        >
+                          {ensuringId === lang.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Download className="h-4 w-4" />
+                          )}
+                        </Button>
                         <Button 
                           variant="ghost" 
                           size="icon" 
