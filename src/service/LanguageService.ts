@@ -1,6 +1,7 @@
 import type { CreateLanguageRequest } from "@/types/request/CreateLanguageRequest";
 import type { UpdateLanguageRequest } from "@/types/request/UpdateLanguageRequest";
 import type { LanguageResponse } from "@/types/response/LanguageResponse";
+import type { LanguageImageEnsureResponse } from "@/types/response/LanguageImageEnsureResponse";
 import api from "@/lib/axios";
 
 export const createLanguage = async (
@@ -25,5 +26,12 @@ export const updateLanguage = async (
 
 export const deleteLanguage = async (id: number): Promise<{ message: string }> => {
   const response = await api.delete<{ message: string }>(`/programming-language/${id}`);
+  return response.data;
+};
+
+export const ensureLanguageImage = async (id: number): Promise<LanguageImageEnsureResponse> => {
+  const response = await api.post<LanguageImageEnsureResponse>(
+    `/programming-language/${id}/image/ensure`
+  );
   return response.data;
 };

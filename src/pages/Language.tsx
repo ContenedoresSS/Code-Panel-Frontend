@@ -1,7 +1,7 @@
 import LanguageForm from "@/components/LanguageForm"
 import LanguageTable from "@/components/LanguageTable"
 import { Button } from "@/components/ui/button"
-import { getAllLanguages } from "@/service/LanguageService";
+import { getAllLanguages, ensureLanguageImage } from "@/service/LanguageService";
 import { Plus } from "lucide-react"
 import { useCallback, useEffect, useState } from "react";
 import type { LanguageResponse } from "@/types/response/LanguageResponse";
@@ -16,6 +16,7 @@ export default function Language (){
   const [languages, setLanguages] = useState<LanguageResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [ensuringId, setEnsuringId] = useState<number | null>(null);
 
   const fetchLanguages = useCallback(async () => {
     try {
@@ -53,6 +54,23 @@ export default function Language (){
   const handleEdit = (lang: LanguageResponse) => {
     setEditingLanguage(lang);
     setShowForm(true);
+  };
+
+  const handleEnsureImage = async (lang: LanguageResponse) => {
+    setEnsuringId(lang.id);
+    try {
+      const result = await ensureLanguageImage(lang.id);
+      if (result.alreadyPresent) {
+        toast.success(`La imagen ${result.dockerImage} ya está instalada`);
+      } else {
+        toast.success(`Imagen ${result.dockerImage} instalada correctamente`);
+      }
+    } catch (error) {
+      logger.error("Error verificando/instalando la imagen", error);
+      toast.error("No se pudo verificar o instalar la imagen");
+    } finally {
+      setEnsuringId(null);
+    }
   };
 
   const handleFormSuccess = () => {
@@ -102,6 +120,8 @@ export default function Language (){
           isLoading={isLoading}
           onDelete={handleDelete}
           onEdit={handleEdit}
+          onEnsureImage={handleEnsureImage}
+          ensuringId={ensuringId}
         />
       </div>
 
